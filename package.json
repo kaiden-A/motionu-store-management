@@ -1,0 +1,14 @@
+{
+  "name": "motionu-store-management",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -k -n server,client -c blue,green \"npm --prefix server run dev\" \"npm --prefix client run dev\"",
+    "build": "npm --prefix client run build",
+    "start": "concurrently -k -n server,client -c blue,green \"npm --prefix server run start\" \"npm --prefix client run start\"",
+    "setup": "npm --prefix client install && cd server && .venv\\Scripts\\python.exe -m pip install -e ."
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}

@@ -1,0 +1,1804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PinPoint — Event Sales Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<style>
+/* =========================================================
+   PinPoint — design tokens & layout
+   ========================================================= */
+
+:root {
+  --ink: #1A1B2E;
+  --ink-soft: #585A78;
+  --paper: #F5F4EF;
+  --card: #FFFFFF;
+  --violet: #4C3FD7;
+  --violet-dark: #362A9E;
+  --violet-tint: #EDEBFC;
+  --pink: #FF6B9D;
+  --pink-dark: #C23D6C;
+  --pink-tint: #FFE7EF;
+  --mint: #1F9D6C;
+  --mint-tint: #E4F7EE;
+  --amber: #B5730A;
+  --amber-tint: #FDF1DD;
+  --red: #C23A3E;
+  --red-tint: #FBE6E7;
+  --line: #E5E2D8;
+  --shadow-sm: 0 1px 2px rgba(26, 27, 46, 0.06);
+  --shadow-md: 0 8px 24px rgba(26, 27, 46, 0.08);
+  --radius: 14px;
+  --radius-sm: 8px;
+  --sidebar-w: 220px;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 {
+  font-family: 'Space Grotesk', 'Inter', sans-serif;
+  margin: 0;
+  color: var(--ink);
+}
+h2 { font-size: 22px; font-weight: 700; }
+h3 { font-size: 17px; font-weight: 700; }
+h4 { font-size: 14px; font-weight: 700; }
+
+button { font-family: inherit; cursor: pointer; }
+input, select, textarea { font-family: inherit; font-size: 14px; }
+
+:focus-visible { outline: 2px solid var(--violet); outline-offset: 2px; }
+
+.num, .tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- app shell ---------- */
+
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+.sidebar {
+  width: var(--sidebar-w);
+  background: var(--ink);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  padding: 20px 14px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px 22px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  font-size: 19px;
+  letter-spacing: -0.01em;
+}
+.brand-mark {
+  width: 30px; height: 30px;
+  background: var(--violet);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px;
+  transform: rotate(-8deg);
+}
+
+.nav { display: flex; flex-direction: column; gap: 3px; flex: 1; }
+
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  background: transparent; border: none; color: rgba(255,255,255,0.7);
+  padding: 10px 12px; border-radius: var(--radius-sm);
+  font-size: 14px; font-weight: 500; text-align: left;
+  transition: background 0.15s, color 0.15s;
+}
+.nav-item svg { flex-shrink: 0; opacity: 0.85; }
+.nav-item:hover { background: rgba(255,255,255,0.06); color: #fff; }
+.nav-item.active { background: var(--violet); color: #fff; }
+
+.settings-btn {
+  background: transparent; border: 1px solid rgba(255,255,255,0.15); color: rgba(255,255,255,0.75);
+  padding: 9px 12px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500;
+  display: flex; align-items: center; gap: 8px;
+}
+.settings-btn:hover { background: rgba(255,255,255,0.08); color: #fff; }
+
+.main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+#topbar { min-height: 0; }
+.topbar-inner {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 28px; border-bottom: 1px solid var(--line);
+  background: var(--card);
+}
+.event-switcher { display: flex; align-items: center; gap: 10px; }
+.switcher-label { font-size: 12px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.06em; }
+.event-switcher select {
+  border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 7px 10px;
+  background: var(--paper); color: var(--ink); font-weight: 600; max-width: 260px;
+}
+
+#view-content { flex: 1; padding: 26px 28px 90px; overflow-y: auto; }
+
+/* ---------- shared bits ---------- */
+
+.view-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; gap: 12px; }
+.view-header.compact { margin-bottom: 10px; }
+.view-header h2 { flex: 1; }
+
+.btn {
+  border: none; border-radius: var(--radius-sm); padding: 10px 18px; font-weight: 600; font-size: 14px;
+  display: inline-flex; align-items: center; gap: 6px; transition: transform 0.1s, background 0.15s, box-shadow .15s;
+}
+.btn:active { transform: scale(0.97); }
+.btn-primary { background: var(--violet); color: #fff; box-shadow: var(--shadow-sm); }
+.btn-primary:hover { background: var(--violet-dark); }
+.btn-primary:disabled { background: #C9C6E8; cursor: not-allowed; }
+.btn-ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+.btn-ghost:hover { background: var(--paper); }
+.btn-danger { background: var(--red); color: #fff; }
+.btn-danger:hover { background: #a52d31; }
+.btn-sm { padding: 7px 12px; font-size: 13px; }
+.btn-block { width: 100%; justify-content: center; }
+
+.link-btn { background: none; border: none; color: var(--violet); font-weight: 600; font-size: 13px; padding: 0; }
+.link-btn:hover { text-decoration: underline; }
+
+.icon-btn {
+  background: transparent; border: 1px solid var(--line); border-radius: var(--radius-sm);
+  width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center;
+  color: var(--ink-soft); font-size: 14px;
+}
+.icon-btn:hover { background: var(--paper); color: var(--ink); }
+
+.pill { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; letter-spacing: 0.02em; }
+.pill-mint { background: var(--mint-tint); color: var(--mint); }
+.pill-muted { background: var(--line); color: var(--ink-soft); }
+
+.tag-badge { display: inline-block; padding: 3px 9px; border-radius: 6px; font-size: 11px; font-weight: 700; }
+.tag-violet { background: var(--violet-tint); color: var(--violet-dark); }
+.tag-pink { background: var(--pink-tint); color: var(--pink-dark); }
+.tag-mint { background: var(--mint-tint); color: var(--mint); }
+.tag-amber { background: var(--amber-tint); color: var(--amber); }
+
+.opt { color: var(--ink-soft); font-weight: 400; font-size: 12px; }
+.txt-danger { color: var(--red); font-weight: 600; }
+.txt-amber { color: var(--amber); font-weight: 600; }
+.txt-mint { color: var(--mint); font-weight: 600; }
+
+.chip-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+.chip {
+  background: var(--card); border: 1px solid var(--line); border-radius: 999px;
+  padding: 7px 15px; font-size: 13px; font-weight: 600; color: var(--ink-soft);
+}
+.chip.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+.chip:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.subtabs { display: flex; gap: 4px; margin-bottom: 20px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 4px; width: fit-content; }
+.subtab { background: transparent; border: none; padding: 8px 18px; border-radius: 6px; font-weight: 600; color: var(--ink-soft); }
+.subtab.active { background: var(--ink); color: #fff; }
+
+/* ---------- empty states ---------- */
+
+.empty-state {
+  max-width: 420px; margin: 60px auto; text-align: center;
+  padding: 32px; background: var(--card); border-radius: var(--radius); border: 1px dashed var(--line);
+}
+.empty-state.small { max-width: 100%; margin: 20px 0; padding: 26px; }
+.empty-mark { font-size: 30px; margin-bottom: 6px; }
+.empty-state p { color: var(--ink-soft); margin: 8px 0 18px; line-height: 1.5; }
+.pick-list { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+.list-pick {
+  background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius-sm);
+  padding: 10px 14px; text-align: left; font-weight: 600; display: flex; justify-content: space-between;
+}
+.list-pick:hover { border-color: var(--violet); }
+
+/* ---------- tag-card (signature element) ---------- */
+
+.tag-card {
+  position: relative;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 20px 18px 18px;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.tag-card:hover { transform: rotate(-0.6deg) translateY(-2px); box-shadow: var(--shadow-md); }
+.tag-hole {
+  position: absolute; top: 14px; left: 16px;
+  width: 12px; height: 12px; border-radius: 50%;
+  background: var(--paper); border: 2px solid var(--line);
+}
+.tag-hole::after {
+  content: ''; position: absolute; top: -8px; left: -8px;
+  width: 28px; height: 28px; border: 1.5px dashed var(--line); border-radius: 50%;
+  border-bottom-color: transparent; border-right-color: transparent;
+  transform: rotate(45deg);
+}
+.tag-card-top { display: flex; justify-content: flex-end; align-items: flex-start; margin-bottom: 8px; padding-left: 22px; }
+
+.event-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 16px;
+}
+.event-name { margin-top: 8px; }
+.event-meta { color: var(--ink-soft); font-size: 12.5px; margin-top: 4px; }
+.event-stat-row {
+  display: flex; gap: 16px; margin: 14px 0; padding: 12px 0;
+  border-top: 1px dashed var(--line); border-bottom: 1px dashed var(--line);
+}
+.event-stat-row div { display: flex; flex-direction: column; }
+.event-stat-row strong { font-family: 'Space Grotesk', sans-serif; font-size: 15px; }
+.event-stat-row span { font-size: 11px; color: var(--ink-soft); }
+.event-card-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.combo-card .combo-items { color: var(--ink-soft); font-size: 12.5px; margin: 6px 0 10px; }
+.combo-price-row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.combo-price { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 17px; }
+
+/* ---------- kebab menu ---------- */
+
+.kebab { position: relative; }
+.kebab summary { list-style: none; cursor: pointer; padding: 4px 8px; border-radius: 6px; color: var(--ink-soft); font-size: 18px; line-height: 1; }
+.kebab summary::-webkit-details-marker { display: none; }
+.kebab summary:hover { background: var(--paper); }
+.kebab[open] summary { background: var(--paper); }
+.kebab .menu {
+  position: absolute; right: 0; top: 30px; background: var(--card); border: 1px solid var(--line);
+  border-radius: var(--radius-sm); box-shadow: var(--shadow-md); min-width: 170px; z-index: 20;
+  display: flex; flex-direction: column; padding: 6px;
+}
+.kebab .menu button {
+  background: none; border: none; text-align: left; padding: 8px 10px; border-radius: 6px; font-size: 13px; color: var(--ink);
+}
+.kebab .menu button:hover { background: var(--paper); }
+.kebab .menu button.danger { color: var(--red); }
+
+/* ---------- tables ---------- */
+
+.table-wrap { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 4px 0; overflow-x: auto; margin-bottom: 24px; }
+.table-wrap h4 { padding: 14px 18px 4px; }
+table { width: 100%; border-collapse: collapse; min-width: 560px; }
+th, td { text-align: left; padding: 11px 16px; font-size: 13px; }
+th { color: var(--ink-soft); font-weight: 600; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 1px solid var(--line); }
+tbody tr { border-bottom: 1px solid var(--line); }
+tbody tr:last-child { border-bottom: none; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.col-name { font-weight: 600; }
+.col-actions { text-align: right; white-space: nowrap; }
+.stock-cell { min-width: 130px; }
+.row-voided { opacity: 0.5; text-decoration: line-through; }
+
+.meter { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; margin-bottom: 4px; }
+.meter-fill { height: 100%; background: var(--mint); border-radius: 3px; }
+.meter-fill.meter-low { background: var(--amber); }
+.meter-fill.meter-empty { background: var(--red); }
+
+/* ---------- setup: combo builder ---------- */
+
+.combo-rows { display: flex; flex-direction: column; gap: 6px; max-height: 220px; overflow-y: auto; border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 8px; }
+.combo-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 4px 4px; }
+.combo-row-name { font-size: 13px; }
+.combo-row input { width: 64px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; text-align: center; }
+.combo-summary { margin-top: 10px; font-size: 13px; background: var(--violet-tint); padding: 10px 12px; border-radius: var(--radius-sm); }
+.field-block { margin: 14px 0; }
+.field-label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+.field-row { display: flex; gap: 12px; }
+.field-row label { flex: 1; }
+
+/* ---------- sell view ---------- */
+
+.sell-layout { display: flex; gap: 22px; align-items: flex-start; }
+.sell-main { flex: 1; min-width: 0; }
+.sell-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+
+.sell-tile {
+  background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 14px 12px; text-align: left; display: flex; flex-direction: column; gap: 4px;
+  box-shadow: var(--shadow-sm); position: relative; overflow: hidden;
+  transition: transform 0.1s, box-shadow 0.15s;
+}
+.sell-tile::after {
+  content: ''; position: absolute; top: 0; right: 0; width: 0; height: 0;
+  border-style: solid; border-width: 0 16px 16px 0; border-color: transparent var(--paper) transparent transparent;
+}
+.sell-tile:hover:not(.disabled) { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.sell-tile.disabled { opacity: 0.5; cursor: not-allowed; }
+.sell-tile .tag-badge { align-self: flex-start; }
+.tile-name { font-weight: 700; font-size: 14px; margin-top: 2px; }
+.tile-sub { font-size: 11px; color: var(--ink-soft); }
+.tile-price { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 16px; margin-top: 2px; }
+.tile-stock { font-size: 11.5px; color: var(--ink-soft); }
+.combo-tile { background: var(--pink-tint); border-color: #F4C7D6; }
+
+/* ---------- cart / receipt ---------- */
+
+.cart-panel { width: 340px; flex-shrink: 0; }
+.receipt {
+  background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 18px 18px 26px; box-shadow: var(--shadow-sm); position: relative;
+}
+.receipt-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.receipt-lines { display: flex; flex-direction: column; gap: 10px; max-height: 320px; overflow-y: auto; padding-bottom: 6px; }
+.receipt-empty { text-align: center; padding: 20px 0; }
+.cart-line {
+  display: grid; grid-template-columns: 1fr auto auto auto; align-items: center; gap: 8px;
+  padding-bottom: 8px; border-bottom: 1px dashed var(--line); font-variant-numeric: tabular-nums;
+}
+.cart-line-info { display: flex; flex-direction: column; min-width: 0; }
+.cart-line-name { font-weight: 600; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cart-line-unit { font-size: 11px; color: var(--ink-soft); }
+.cart-line-qty { display: flex; align-items: center; gap: 6px; }
+.qty-btn { width: 22px; height: 22px; border-radius: 6px; border: 1px solid var(--line); background: var(--paper); font-weight: 700; line-height: 1; }
+.cart-line-total { font-weight: 700; font-size: 13px; }
+.receipt-total-row { display: flex; justify-content: space-between; align-items: center; margin: 14px 0 12px; padding-top: 10px; border-top: 1px solid var(--line); }
+.receipt-total { font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; }
+.receipt-tear {
+  position: absolute; left: 0; right: 0; bottom: -1px; height: 10px;
+  background: repeating-linear-gradient(-45deg, var(--paper) 0 6px, transparent 6px 12px);
+  clip-path: polygon(0% 0%, 4% 100%, 8% 0%, 12% 100%, 16% 0%, 20% 100%, 24% 0%, 28% 100%, 32% 0%, 36% 100%, 40% 0%, 44% 100%, 48% 0%, 52% 100%, 56% 0%, 60% 100%, 64% 0%, 68% 100%, 72% 0%, 76% 100%, 80% 0%, 84% 100%, 88% 0%, 92% 100%, 96% 0%, 100% 100%, 100% 0%);
+  background-color: var(--card);
+}
+.checkout-total { font-size: 15px; margin: 0 0 4px; }
+
+.recent-activity { margin-top: 16px; }
+.recent-activity h4 { margin-bottom: 8px; color: var(--ink-soft); font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+.recent-line { display: flex; justify-content: space-between; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 12.5px; }
+.recent-line:last-child { border-bottom: none; }
+.recent-line.voided { opacity: 0.5; }
+.recent-time { display: block; color: var(--ink-soft); font-size: 11px; }
+.recent-items { display: block; max-width: 190px; }
+.recent-right { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; font-weight: 600; }
+
+.mobile-cart-toggle { display: none; }
+
+/* ---------- charts / stats ---------- */
+
+.stat-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 20px; }
+.stat-card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; display: flex; flex-direction: column; gap: 4px; }
+.stat-value { font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 700; }
+.stat-label { font-size: 11.5px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.04em; }
+
+.chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+.chart-card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; }
+.chart-card h4 { margin-bottom: 10px; }
+.chart-card canvas { max-height: 240px; }
+
+.danger-zone { border-top: 1px dashed var(--line); margin-top: 4px; padding-top: 16px; }
+.danger-zone h4 { color: var(--red); margin-bottom: 4px; }
+.danger-zone p { margin: 0 0 10px; }
+
+/* ---------- modals ---------- */
+
+.modal-backdrop {
+  position: fixed; inset: 0; background: rgba(26, 27, 46, 0.45); backdrop-filter: blur(2px);
+  display: flex; align-items: center; justify-content: center; z-index: 100; padding: 20px;
+  opacity: 0; transition: opacity 0.15s;
+}
+.modal-backdrop.open { opacity: 1; }
+.modal-card {
+  background: var(--card); border-radius: var(--radius); width: 100%; max-width: 440px;
+  max-height: 88vh; overflow-y: auto; box-shadow: var(--shadow-md);
+  transform: translateY(8px) scale(0.98); transition: transform 0.15s;
+}
+.modal-backdrop.open .modal-card { transform: translateY(0) scale(1); }
+.modal-head { padding: 20px 22px 4px; }
+.modal-body { padding: 14px 22px; display: flex; flex-direction: column; gap: 14px; }
+.modal-body label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600; }
+.modal-body input, .modal-body select, .modal-body textarea {
+  padding: 9px 11px; border: 1px solid var(--line); border-radius: var(--radius-sm); font-weight: 400; background: var(--paper);
+  color: var(--ink);
+}
+.modal-body input:focus, .modal-body select:focus, .modal-body textarea:focus { border-color: var(--violet); background: #fff; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 10px; padding: 16px 22px 22px; }
+
+/* ---------- toasts ---------- */
+
+#toast-root { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); z-index: 200; display: flex; flex-direction: column; gap: 8px; align-items: center; }
+.toast {
+  background: var(--ink); color: #fff; padding: 11px 18px; border-radius: 999px; font-size: 13px; font-weight: 600;
+  box-shadow: var(--shadow-md); opacity: 0; transform: translateY(8px); transition: opacity 0.2s, transform 0.2s;
+}
+.toast.show { opacity: 1; transform: translateY(0); }
+.toast-error { background: var(--red); }
+
+/* ---------- responsive ---------- */
+
+@media (max-width: 900px) {
+  .chart-grid { grid-template-columns: 1fr; }
+  .sell-layout { flex-direction: column; }
+  .cart-panel {
+    width: auto; position: fixed; left: 0; right: 0; bottom: 0; background: var(--paper);
+    max-height: 0; overflow: hidden; transition: max-height 0.25s ease; z-index: 60;
+    padding: 0 14px; border-top: 1px solid var(--line);
+  }
+  .cart-panel.cart-open { max-height: 78vh; overflow-y: auto; padding: 14px 14px 24px; box-shadow: 0 -8px 24px rgba(26,27,46,0.15); }
+  .mobile-cart-toggle {
+    display: flex; justify-content: space-between; align-items: center;
+    position: fixed; left: 14px; right: 14px; bottom: 74px; z-index: 55;
+    background: var(--violet); color: #fff; border: none; border-radius: 999px;
+    padding: 12px 18px; font-weight: 700; box-shadow: var(--shadow-md);
+  }
+}
+
+@media (max-width: 720px) {
+  .app-shell { flex-direction: column; }
+  .sidebar {
+    width: 100%; height: auto; position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
+    flex-direction: row; align-items: center; padding: 8px 10px; box-shadow: 0 -4px 16px rgba(0,0,0,0.15);
+  }
+  .brand { display: none; }
+  .nav { flex-direction: row; flex: 1; justify-content: space-around; }
+  .nav-item { flex-direction: column; font-size: 10.5px; gap: 3px; padding: 6px 4px; }
+  .settings-btn { padding: 8px; }
+  .settings-btn span.label { display: none; }
+  .main { padding-bottom: 64px; }
+  #view-content { padding: 18px 16px 90px; }
+  .topbar-inner { padding: 12px 16px; }
+  .event-grid { grid-template-columns: 1fr; }
+  .sell-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
+  .stat-cards { grid-template-columns: repeat(2, 1fr); }
+}
+
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand"><span class="brand-mark">&#128204;</span><span>PinPoint</span></div>
+    <nav class="nav">
+      <button class="nav-item" data-view="events" onclick="App.setView('events')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41 11 3.83A2 2 0 0 0 9.59 3.24L4 3a1 1 0 0 0-1 1l.24 5.59a2 2 0 0 0 .59 1.41l9.58 9.58a2 2 0 0 0 2.83 0l4.35-4.35a2 2 0 0 0 0-2.82Z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg>
+        <span>Events</span>
+      </button>
+      <button class="nav-item" data-view="sell" onclick="App.setView('sell')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 2-1.58l1.65-7.42H5.12"/></svg>
+        <span>Sell</span>
+      </button>
+      <button class="nav-item" data-view="setup" onclick="App.setView('setup')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="4" y1="21" y2="14"/><line x1="4" x2="4" y1="10" y2="3"/><line x1="12" x2="12" y1="21" y2="12"/><line x1="12" x2="12" y1="8" y2="3"/><line x1="20" x2="20" y1="21" y2="16"/><line x1="20" x2="20" y1="12" y2="3"/><line x1="2" x2="6" y1="14" y2="14"/><line x1="10" x2="14" y1="8" y2="8"/><line x1="18" x2="22" y1="16" y2="16"/></svg>
+        <span>Setup</span>
+      </button>
+      <button class="nav-item" data-view="stats" onclick="App.setView('stats')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="20" y2="10"/><line x1="18" x2="18" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="16"/></svg>
+        <span>Stats</span>
+      </button>
+    </nav>
+    <button class="settings-btn" onclick="App.openSettings()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+      <span class="label">Settings</span>
+    </button>
+  </aside>
+  <main class="main">
+    <div id="topbar"></div>
+    <div id="view-content"></div>
+  </main>
+</div>
+<div id="modal-root"></div>
+<div id="toast-root"></div>
+<script>
+/* =========================================================
+   PinPoint — Event Sales Tracker
+   Vanilla JS SPA. State persisted to localStorage.
+   ========================================================= */
+
+const STORAGE_KEY = 'pinpoint_state_v1';
+const LOW_STOCK_MIN = 3;
+const LOW_STOCK_RATIO = 0.15;
+const CATEGORY_DEFAULTS = ['Sticker', 'Enamel Pin', 'Print', 'Keychain', 'Charm', 'Other'];
+const PALETTE = ['violet', 'pink', 'mint', 'amber'];
+
+let state = null;
+let chartRefs = { bar: null, line: null };
+
+/* ---------------------------------------------------------
+   Utilities
+   --------------------------------------------------------- */
+
+function uid(prefix) {
+  return prefix + '_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+}
+
+function escapeHtml(str) {
+  return String(str == null ? '' : str).replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+}
+
+function fmtMoney(n) {
+  const v = Number(n) || 0;
+  return state.currency + v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function fmtDate(d) {
+  if (!d) return '—';
+  const dt = new Date(d);
+  return dt.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+function fmtDateTime(ts) {
+  const dt = new Date(ts);
+  return dt.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ' · ' +
+    dt.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+}
+
+function categoryColorClass(cat) {
+  let hash = 0;
+  const s = String(cat || 'Other');
+  for (let i = 0; i < s.length; i++) hash = (hash * 31 + s.charCodeAt(i)) >>> 0;
+  return 'tag-' + PALETTE[hash % PALETTE.length];
+}
+
+function getCurrentEvent() {
+  return state.events.find(e => e.id === state.currentEventId) || null;
+}
+
+function getProductRemaining(event, productId, excludeCartLine) {
+  const product = event.products.find(p => p.id === productId);
+  if (!product) return 0;
+  let reserved = 0;
+  state.cart.forEach((item, idx) => {
+    if (excludeCartLine !== undefined && idx === excludeCartLine) return;
+    if (item.refType === 'product' && item.refId === productId) reserved += item.qty;
+    if (item.refType === 'combo') {
+      const combo = event.combos.find(c => c.id === item.refId);
+      if (combo) {
+        const compItem = combo.items.find(ci => ci.productId === productId);
+        if (compItem) reserved += compItem.qty * item.qty;
+      }
+    }
+  });
+  return product.stock - product.sold - reserved;
+}
+
+function getComboRemaining(event, comboId, excludeCartLine) {
+  const combo = event.combos.find(c => c.id === comboId);
+  if (!combo || combo.items.length === 0) return 0;
+  return Math.min(...combo.items.map(ci =>
+    Math.floor(getProductRemaining(event, ci.productId, excludeCartLine) / ci.qty)
+  ));
+}
+
+function isLowStock(remaining, stock) {
+  return remaining > 0 && remaining <= Math.max(LOW_STOCK_MIN, Math.round(stock * LOW_STOCK_RATIO));
+}
+
+function eventStats(event) {
+  const txs = event.transactions.filter(t => !t.voided);
+  const revenue = txs.reduce((s, t) => s + t.total, 0);
+  const itemsSold = txs.reduce((s, t) => s + t.items.reduce((si, i) => si + i.qty, 0), 0);
+  return { revenue, itemsSold, txCount: txs.length, avg: txs.length ? revenue / txs.length : 0 };
+}
+
+function allEventsStats() {
+  const txs = [];
+  state.events.forEach(e => e.transactions.forEach(t => { if (!t.voided) txs.push(t); }));
+  const revenue = txs.reduce((s, t) => s + t.total, 0);
+  const itemsSold = txs.reduce((s, t) => s + t.items.reduce((si, i) => si + i.qty, 0), 0);
+  return { revenue, itemsSold, txCount: txs.length, avg: txs.length ? revenue / txs.length : 0 };
+}
+
+/* ---------------------------------------------------------
+   Persistence
+   --------------------------------------------------------- */
+
+function saveState() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch (e) {
+    console.error('Save failed', e);
+  }
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      state = JSON.parse(raw);
+      if (!state.cart) state.cart = [];
+      if (!state.currency) state.currency = 'RM';
+      return true;
+    }
+  } catch (e) {
+    console.error('Load failed', e);
+  }
+  return false;
+}
+
+function freshState() {
+  return {
+    events: [],
+    currentEventId: null,
+    currentView: 'events',
+    setupTab: 'products',
+    sellFilter: 'All',
+    statsScope: 'event',
+    currency: 'RM',
+    cart: [],
+    pendingConfirm: null
+  };
+}
+
+/* Runs a sale through the same logic used at checkout time.
+   Used both by real checkout and demo seeding, so numbers always line up. */
+function processSale(event, cartItems, paymentMethod, timestampOverride) {
+  const txItems = [];
+  let total = 0;
+  cartItems.forEach(item => {
+    if (item.refType === 'product') {
+      const p = event.products.find(pp => pp.id === item.refId);
+      if (!p) return;
+      p.sold += item.qty;
+      const lineTotal = p.price * item.qty;
+      total += lineTotal;
+      txItems.push({ refType: 'product', refId: p.id, name: p.name, unitPrice: p.price, qty: item.qty, lineTotal });
+    } else if (item.refType === 'combo') {
+      const c = event.combos.find(cc => cc.id === item.refId);
+      if (!c) return;
+      c.sold += item.qty;
+      c.items.forEach(ci => {
+        const p = event.products.find(pp => pp.id === ci.productId);
+        if (p) p.sold += ci.qty * item.qty;
+      });
+      const lineTotal = c.price * item.qty;
+      total += lineTotal;
+      txItems.push({ refType: 'combo', refId: c.id, name: c.name, unitPrice: c.price, qty: item.qty, lineTotal });
+    }
+  });
+  const tx = {
+    id: uid('tx'),
+    timestamp: timestampOverride || Date.now(),
+    items: txItems,
+    total,
+    paymentMethod: paymentMethod || 'Cash',
+    voided: false
+  };
+  event.transactions.push(tx);
+  return tx;
+}
+
+function seedDemoData() {
+  const event = {
+    id: uid('evt'),
+    name: 'Artisan Alley Pop-Up',
+    date: '2026-08-30',
+    location: 'Klang Convention Hall',
+    description: 'Weekend craft market booth — first outing for the new pin designs.',
+    status: 'active',
+    products: [],
+    combos: [],
+    transactions: []
+  };
+  const mk = (name, category, price, stock) => {
+    const p = { id: uid('prd'), name, category, price, stock, sold: 0 };
+    event.products.push(p);
+    return p;
+  };
+  const starSticker = mk('Star Sticker', 'Sticker', 8, 100);
+  const catPin = mk('Cat Enamel Pin', 'Enamel Pin', 18, 60);
+  const moonPin = mk('Moon Enamel Pin', 'Enamel Pin', 18, 60);
+  mk('Postcard Print', 'Print', 5, 80);
+  mk('Acrylic Keychain', 'Keychain', 15, 50);
+
+  event.combos.push({
+    id: uid('cmb'), name: 'Starter Bundle', price: 25,
+    items: [{ productId: catPin.id, qty: 1 }, { productId: starSticker.id, qty: 2 }],
+    sold: 0
+  });
+  event.combos.push({
+    id: uid('cmb'), name: 'Pin Duo', price: 32,
+    items: [{ productId: catPin.id, qty: 1 }, { productId: moonPin.id, qty: 1 }],
+    sold: 0
+  });
+
+  const startTs = new Date('2026-08-30T10:00:00').getTime();
+  const sampleCarts = [
+    [{ refType: 'product', refId: starSticker.id, qty: 3 }],
+    [{ refType: 'combo', refId: event.combos[0].id, qty: 1 }],
+    [{ refType: 'product', refId: event.products[3].id, qty: 2 }, { refType: 'product', refId: starSticker.id, qty: 1 }],
+    [{ refType: 'combo', refId: event.combos[1].id, qty: 1 }],
+    [{ refType: 'product', refId: catPin.id, qty: 1 }],
+    [{ refType: 'product', refId: event.products[4].id, qty: 1 }],
+    [{ refType: 'combo', refId: event.combos[0].id, qty: 2 }],
+    [{ refType: 'product', refId: starSticker.id, qty: 5 }],
+    [{ refType: 'product', refId: moonPin.id, qty: 2 }],
+    [{ refType: 'product', refId: event.products[3].id, qty: 4 }],
+    [{ refType: 'combo', refId: event.combos[1].id, qty: 1 }],
+    [{ refType: 'product', refId: starSticker.id, qty: 2 }, { refType: 'product', refId: event.products[4].id, qty: 1 }]
+  ];
+  const methods = ['Cash', 'Cash', 'Transfer', 'E-Wallet'];
+  sampleCarts.forEach((cart, i) => {
+    processSale(event, cart, methods[i % methods.length], startTs + i * 27 * 60000);
+  });
+
+  state.events.push(event);
+  state.currentEventId = event.id;
+}
+
+/* ---------------------------------------------------------
+   Init
+   --------------------------------------------------------- */
+
+function initApp() {
+  if (!loadState()) {
+    state = freshState();
+    seedDemoData();
+    saveState();
+  }
+  render();
+}
+
+/* ---------------------------------------------------------
+   View / nav
+   --------------------------------------------------------- */
+
+function setView(view) {
+  state.currentView = view;
+  saveState();
+  render();
+}
+
+function goToEvent(eventId, view) {
+  state.currentEventId = eventId;
+  state.currentView = view;
+  state.cart = [];
+  saveState();
+  render();
+}
+
+function render() {
+  document.querySelectorAll('.nav-item').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.view === state.currentView);
+  });
+  renderTopbar();
+  const el = document.getElementById('view-content');
+  if (state.currentView === 'events') el.innerHTML = renderEventsView();
+  else if (state.currentView === 'sell') el.innerHTML = renderSellView();
+  else if (state.currentView === 'setup') el.innerHTML = renderSetupView();
+  else if (state.currentView === 'stats') { el.innerHTML = renderStatsView(); mountCharts(); }
+  document.getElementById('cart-panel-mount') && attachCartMountedBehaviors();
+}
+
+function renderTopbar() {
+  const el = document.getElementById('topbar');
+  if (state.currentView === 'events' || state.currentView === 'stats-global') {
+    el.innerHTML = '';
+    return;
+  }
+  const ev = getCurrentEvent();
+  const options = state.events.map(e =>
+    `<option value="${e.id}" ${ev && ev.id === e.id ? 'selected' : ''}>${escapeHtml(e.name)}</option>`
+  ).join('');
+  el.innerHTML = `
+    <div class="topbar-inner">
+      <div class="event-switcher">
+        <span class="switcher-label">Event</span>
+        <select onchange="App.switchEvent(this.value)" ${state.events.length === 0 ? 'disabled' : ''}>
+          ${state.events.length === 0 ? '<option>No events yet</option>' : options}
+        </select>
+      </div>
+      ${ev ? `<span class="pill ${ev.status === 'active' ? 'pill-mint' : 'pill-muted'}">${ev.status === 'active' ? 'Active' : 'Ended'}</span>` : ''}
+    </div>`;
+}
+
+function switchEvent(id) {
+  state.currentEventId = id;
+  state.cart = [];
+  saveState();
+  render();
+}
+
+/* ---------------------------------------------------------
+   Toasts
+   --------------------------------------------------------- */
+
+function showToast(msg, type) {
+  const root = document.getElementById('toast-root');
+  const t = document.createElement('div');
+  t.className = 'toast toast-' + (type || 'success');
+  t.textContent = msg;
+  root.appendChild(t);
+  requestAnimationFrame(() => t.classList.add('show'));
+  setTimeout(() => {
+    t.classList.remove('show');
+    setTimeout(() => t.remove(), 250);
+  }, 2600);
+}
+
+/* ---------------------------------------------------------
+   Modals — generic
+   --------------------------------------------------------- */
+
+let modalToken = 0;
+
+function openModal(html) {
+  const root = document.getElementById('modal-root');
+  const myToken = ++modalToken;
+  root.innerHTML = `<div class="modal-backdrop" onclick="if(event.target===this) App.closeModal()"><div class="modal-card">${html}</div></div>`;
+  requestAnimationFrame(() => {
+    if (myToken !== modalToken) return;
+    const bd = root.querySelector('.modal-backdrop');
+    if (bd) bd.classList.add('open');
+  });
+}
+
+function closeModal() {
+  const root = document.getElementById('modal-root');
+  const myToken = ++modalToken;
+  const bd = root.querySelector('.modal-backdrop');
+  if (!bd) { root.innerHTML = ''; return; }
+  bd.classList.remove('open');
+  setTimeout(() => {
+    if (myToken !== modalToken) return;
+    root.innerHTML = '';
+  }, 150);
+}
+
+function requestConfirm(message, action, payload) {
+  state.pendingConfirm = { action, payload };
+  openModal(`
+    <div class="modal-head"><h3>Are you sure?</h3></div>
+    <div class="modal-body"><p>${escapeHtml(message)}</p></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="App.closeModal()">Cancel</button>
+      <button class="btn btn-danger" onclick="App.confirmYes()">Confirm</button>
+    </div>
+  `);
+}
+
+function confirmYes() {
+  const pc = state.pendingConfirm;
+  if (!pc) return closeModal();
+  state.pendingConfirm = null;
+  closeModal();
+  CONFIRM_ACTIONS[pc.action](pc.payload);
+}
+
+const CONFIRM_ACTIONS = {
+  deleteEvent(id) {
+    state.events = state.events.filter(e => e.id !== id);
+    if (state.currentEventId === id) state.currentEventId = state.events[0] ? state.events[0].id : null;
+    saveState(); render();
+    showToast('Event deleted.', 'success');
+  },
+  deleteProduct({ eventId, productId }) {
+    const ev = state.events.find(e => e.id === eventId);
+    ev.products = ev.products.filter(p => p.id !== productId);
+    saveState(); render();
+    showToast('Product removed.', 'success');
+  },
+  deleteCombo({ eventId, comboId }) {
+    const ev = state.events.find(e => e.id === eventId);
+    ev.combos = ev.combos.filter(c => c.id !== comboId);
+    saveState(); render();
+    showToast('Combo removed.', 'success');
+  },
+  voidTransaction({ eventId, txId }) {
+    const ev = state.events.find(e => e.id === eventId);
+    const tx = ev.transactions.find(t => t.id === txId);
+    if (!tx || tx.voided) return;
+    tx.voided = true;
+    tx.items.forEach(item => {
+      if (item.refType === 'product') {
+        const p = ev.products.find(pp => pp.id === item.refId);
+        if (p) p.sold -= item.qty;
+      } else {
+        const c = ev.combos.find(cc => cc.id === item.refId);
+        if (c) {
+          c.sold -= item.qty;
+          c.items.forEach(ci => {
+            const p = ev.products.find(pp => pp.id === ci.productId);
+            if (p) p.sold -= ci.qty * item.qty;
+          });
+        }
+      }
+    });
+    saveState(); render();
+    showToast('Transaction voided and stock restored.', 'success');
+  },
+  clearAllData() {
+    localStorage.removeItem(STORAGE_KEY);
+    state = freshState();
+    saveState(); render();
+    showToast('All data cleared.', 'success');
+  }
+};
+
+/* ---------------------------------------------------------
+   EVENTS VIEW
+   --------------------------------------------------------- */
+
+function renderEventsView() {
+  const cards = state.events.map(ev => {
+    const stats = eventStats(ev);
+    return `
+    <div class="tag-card event-card">
+      <div class="tag-hole"></div>
+      <div class="tag-card-top">
+        <span class="pill ${ev.status === 'active' ? 'pill-mint' : 'pill-muted'}">${ev.status === 'active' ? 'Active' : 'Ended'}</span>
+        <details class="kebab">
+          <summary>&#8942;</summary>
+          <div class="menu">
+            <button onclick="App.openEditEventModal('${ev.id}')">Rename / Edit</button>
+            <button onclick="App.toggleEventStatus('${ev.id}')">${ev.status === 'active' ? 'Mark as ended' : 'Mark as active'}</button>
+            <button class="danger" onclick="App.deleteEventConfirm('${ev.id}')">Delete event</button>
+          </div>
+        </details>
+      </div>
+      <h3 class="event-name">${escapeHtml(ev.name)}</h3>
+      <div class="event-meta">${fmtDate(ev.date)}${ev.location ? ' · ' + escapeHtml(ev.location) : ''}</div>
+      <div class="event-stat-row">
+        <div><strong>${fmtMoney(stats.revenue)}</strong><span>revenue</span></div>
+        <div><strong>${stats.itemsSold}</strong><span>items sold</span></div>
+        <div><strong>${ev.products.length}</strong><span>products</span></div>
+      </div>
+      <div class="event-card-actions">
+        <button class="btn btn-primary btn-sm" onclick="App.goToEvent('${ev.id}','sell')">Sell</button>
+        <button class="btn btn-ghost btn-sm" onclick="App.goToEvent('${ev.id}','setup')">Setup</button>
+        <button class="btn btn-ghost btn-sm" onclick="App.goToEvent('${ev.id}','stats')">Stats</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  const empty = `
+    <div class="empty-state">
+      <div class="empty-mark">&#127991;</div>
+      <h3>No events yet</h3>
+      <p>Create your first pop-up, market day, or con booth to start tracking what you sell.</p>
+      <button class="btn btn-primary" onclick="App.openNewEventModal()">+ New event</button>
+    </div>`;
+
+  return `
+    <div class="view-header">
+      <h2>Events</h2>
+      <button class="btn btn-primary" onclick="App.openNewEventModal()">+ New event</button>
+    </div>
+    ${state.events.length ? `<div class="event-grid">${cards}</div>` : empty}
+  `;
+}
+
+function openNewEventModal() { openModal(buildEventModal(null)); }
+function openEditEventModal(id) {
+  const ev = state.events.find(e => e.id === id);
+  openModal(buildEventModal(ev));
+}
+
+function buildEventModal(existing) {
+  return `
+    <div class="modal-head"><h3>${existing ? 'Edit event' : 'New event'}</h3></div>
+    <form onsubmit="return App.submitEventForm(event, ${existing ? `'${existing.id}'` : 'null'})">
+      <div class="modal-body">
+        <label>Event name
+          <input type="text" name="name" required placeholder="e.g. Comic Con Booth #204" value="${existing ? escapeHtml(existing.name) : ''}">
+        </label>
+        <label>Date
+          <input type="date" name="date" value="${existing ? existing.date : ''}">
+        </label>
+        <label>Location <span class="opt">(optional)</span>
+          <input type="text" name="location" placeholder="e.g. Hall B, Table 12" value="${existing ? escapeHtml(existing.location || '') : ''}">
+        </label>
+        <label>Notes <span class="opt">(optional)</span>
+          <textarea name="description" rows="2" placeholder="Anything worth remembering about this event">${existing ? escapeHtml(existing.description || '') : ''}</textarea>
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" onclick="App.closeModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary">${existing ? 'Save changes' : 'Create event'}</button>
+      </div>
+    </form>`;
+}
+
+function submitEventForm(e, editingId) {
+  e.preventDefault();
+  const f = new FormData(e.target);
+  const name = f.get('name').trim();
+  if (!name) { showToast('Event name is required.', 'error'); return false; }
+  if (editingId) {
+    const ev = state.events.find(x => x.id === editingId);
+    ev.name = name; ev.date = f.get('date'); ev.location = f.get('location').trim(); ev.description = f.get('description').trim();
+    showToast('Event updated.', 'success');
+  } else {
+    const ev = {
+      id: uid('evt'), name, date: f.get('date'), location: f.get('location').trim(),
+      description: f.get('description').trim(), status: 'active',
+      products: [], combos: [], transactions: []
+    };
+    state.events.push(ev);
+    state.currentEventId = ev.id;
+    showToast('Event created — add products in Setup.', 'success');
+  }
+  saveState(); closeModal(); render();
+  return false;
+}
+
+function toggleEventStatus(id) {
+  const ev = state.events.find(e => e.id === id);
+  ev.status = ev.status === 'active' ? 'ended' : 'active';
+  saveState(); render();
+}
+
+function deleteEventConfirm(id) {
+  const ev = state.events.find(e => e.id === id);
+  requestConfirm(`Delete "${ev.name}"? This removes all its products, combos, and ${ev.transactions.length} transaction(s) permanently.`, 'deleteEvent', id);
+}
+
+/* ---------------------------------------------------------
+   SETUP VIEW
+   --------------------------------------------------------- */
+
+function setSetupTab(tab) { state.setupTab = tab; render(); }
+
+function renderSetupView() {
+  const ev = getCurrentEvent();
+  if (!ev) return renderNoEventPrompt('setup');
+
+  const tabs = `
+    <div class="subtabs">
+      <button class="subtab ${state.setupTab === 'products' ? 'active' : ''}" onclick="App.setSetupTab('products')">Products</button>
+      <button class="subtab ${state.setupTab === 'combos' ? 'active' : ''}" onclick="App.setSetupTab('combos')">Combos</button>
+    </div>`;
+
+  if (state.setupTab === 'products') return tabs + renderProductsTab(ev);
+  return tabs + renderCombosTab(ev);
+}
+
+function renderNoEventPrompt(target) {
+  if (state.events.length === 0) {
+    return `<div class="empty-state">
+      <div class="empty-mark">&#127991;</div>
+      <h3>No events yet</h3>
+      <p>Create an event first, then come back here.</p>
+      <button class="btn btn-primary" onclick="App.setView('events')">Go create one</button>
+    </div>`;
+  }
+  const opts = state.events.map(e => `<button class="list-pick" onclick="App.goToEvent('${e.id}','${target}')">${escapeHtml(e.name)} <span class="opt">${fmtDate(e.date)}</span></button>`).join('');
+  return `<div class="empty-state">
+    <div class="empty-mark">&#128204;</div>
+    <h3>Pick an event</h3>
+    <p>Choose which event you want to work on.</p>
+    <div class="pick-list">${opts}</div>
+  </div>`;
+}
+
+function renderProductsTab(ev) {
+  const rows = ev.products.map(p => {
+    const remaining = getProductRemaining(ev, p.id);
+    const pct = p.stock ? Math.max(0, Math.min(100, (remaining / p.stock) * 100)) : 0;
+    const low = isLowStock(remaining, p.stock);
+    return `
+    <tr>
+      <td class="col-name">${escapeHtml(p.name)}</td>
+      <td><span class="tag-badge ${categoryColorClass(p.category)}">${escapeHtml(p.category)}</span></td>
+      <td class="num">${fmtMoney(p.price)}</td>
+      <td class="num">${p.stock}</td>
+      <td class="num">${p.sold}</td>
+      <td class="stock-cell">
+        <div class="meter"><div class="meter-fill ${remaining <= 0 ? 'meter-empty' : low ? 'meter-low' : ''}" style="width:${pct}%"></div></div>
+        <span class="${remaining <= 0 ? 'txt-danger' : low ? 'txt-amber' : ''}">${remaining <= 0 ? 'Sold out' : remaining + ' left'}</span>
+      </td>
+      <td class="col-actions">
+        <button class="icon-btn" title="Edit" onclick="App.openEditProductModal('${p.id}')">&#9998;</button>
+        <button class="icon-btn" title="Delete" onclick="App.deleteProductConfirm('${ev.id}','${p.id}')">&#128465;</button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  const empty = `<div class="empty-state small">
+    <p>No products yet. Add what you'll be selling — stickers, pins, prints, whatever you've got.</p>
+    <button class="btn btn-primary" onclick="App.openNewProductModal()">+ Add product</button>
+  </div>`;
+
+  return `
+    <div class="view-header">
+      <h2>Products</h2>
+      <button class="btn btn-primary" onclick="App.openNewProductModal()">+ Add product</button>
+    </div>
+    ${ev.products.length === 0 ? empty : `
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Name</th><th>Category</th><th class="num">Price</th><th class="num">Stock</th><th class="num">Sold</th><th>Remaining</th><th></th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`}
+  `;
+}
+
+function openNewProductModal() {
+  const ev = getCurrentEvent();
+  if (!ev) return;
+  openModal(buildProductModal(null, ev));
+}
+function openEditProductModal(id) {
+  const ev = getCurrentEvent();
+  const p = ev.products.find(x => x.id === id);
+  openModal(buildProductModal(p, ev));
+}
+
+function buildProductModal(existing, ev) {
+  const cats = Array.from(new Set([...CATEGORY_DEFAULTS, ...ev.products.map(p => p.category)]));
+  return `
+    <div class="modal-head"><h3>${existing ? 'Edit product' : 'Add product'}</h3></div>
+    <form onsubmit="return App.submitProductForm(event, ${existing ? `'${existing.id}'` : 'null'})">
+      <div class="modal-body">
+        <label>Item name
+          <input type="text" name="name" required placeholder="e.g. Star Sticker" value="${existing ? escapeHtml(existing.name) : ''}">
+        </label>
+        <label>Category
+          <input type="text" name="category" list="categoryOptions" required placeholder="e.g. Sticker" value="${existing ? escapeHtml(existing.category) : ''}">
+          <datalist id="categoryOptions">${cats.map(c => `<option value="${escapeHtml(c)}">`).join('')}</datalist>
+        </label>
+        <div class="field-row">
+          <label>Price (${state.currency})
+            <input type="number" name="price" min="0" step="0.01" required value="${existing ? existing.price : ''}">
+          </label>
+          <label>Target stock
+            <input type="number" name="stock" min="0" step="1" required value="${existing ? existing.stock : ''}">
+          </label>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" onclick="App.closeModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary">${existing ? 'Save changes' : 'Add product'}</button>
+      </div>
+    </form>`;
+}
+
+function submitProductForm(e, editingId) {
+  e.preventDefault();
+  const ev = getCurrentEvent();
+  const f = new FormData(e.target);
+  const name = f.get('name').trim();
+  const category = f.get('category').trim();
+  const price = Number(f.get('price'));
+  const stock = Math.round(Number(f.get('stock')));
+  if (!name || !category || isNaN(price) || price < 0 || isNaN(stock) || stock < 0) {
+    showToast('Please fill in every field with a valid value.', 'error'); return false;
+  }
+  if (editingId) {
+    const p = ev.products.find(x => x.id === editingId);
+    p.name = name; p.category = category; p.price = price; p.stock = stock;
+    showToast('Product updated.', 'success');
+  } else {
+    ev.products.push({ id: uid('prd'), name, category, price, stock, sold: 0 });
+    showToast('Product added.', 'success');
+  }
+  saveState(); closeModal(); render();
+  return false;
+}
+
+function deleteProductConfirm(eventId, productId) {
+  const ev = state.events.find(e => e.id === eventId);
+  const usedIn = ev.combos.filter(c => c.items.some(i => i.productId === productId));
+  if (usedIn.length) {
+    showToast(`Can't delete — used in combo "${usedIn[0].name}". Remove it from combos first.`, 'error');
+    return;
+  }
+  const p = ev.products.find(x => x.id === productId);
+  requestConfirm(`Delete "${p.name}"? This can't be undone.`, 'deleteProduct', { eventId, productId });
+}
+
+/* ----- Combos tab ----- */
+
+function renderCombosTab(ev) {
+  if (ev.products.length === 0) {
+    return `<div class="view-header"><h2>Combos</h2></div>
+      <div class="empty-state small"><p>Add at least one product before building a combo.</p>
+      <button class="btn btn-primary" onclick="App.setSetupTab('products')">Go to products</button></div>`;
+  }
+  const cards = ev.combos.map(c => {
+    const regular = c.items.reduce((s, ci) => {
+      const p = ev.products.find(pp => pp.id === ci.productId);
+      return s + (p ? p.price * ci.qty : 0);
+    }, 0);
+    const savings = regular - c.price;
+    const remaining = getComboRemaining(ev, c.id);
+    const itemsList = c.items.map(ci => {
+      const p = ev.products.find(pp => pp.id === ci.productId);
+      return `${ci.qty}&times; ${escapeHtml(p ? p.name : '—')}`;
+    }).join(', ');
+    return `
+    <div class="tag-card combo-card">
+      <div class="tag-hole"></div>
+      <div class="tag-card-top">
+        <span class="tag-badge tag-pink">COMBO</span>
+        <details class="kebab">
+          <summary>&#8942;</summary>
+          <div class="menu">
+            <button onclick="App.openEditComboModal('${c.id}')">Edit</button>
+            <button class="danger" onclick="App.deleteComboConfirm('${ev.id}','${c.id}')">Delete</button>
+          </div>
+        </details>
+      </div>
+      <h3>${escapeHtml(c.name)}</h3>
+      <div class="combo-items">${itemsList}</div>
+      <div class="combo-price-row">
+        <span class="combo-price">${fmtMoney(c.price)}</span>
+        ${savings > 0 ? `<span class="pill pill-mint">Save ${fmtMoney(savings)}</span>` : ''}
+      </div>
+      <div class="event-meta">${remaining <= 0 ? 'Sold out' : remaining + ' bundles left'} · ${c.sold} sold</div>
+    </div>`;
+  }).join('');
+
+  const empty = `<div class="empty-state small">
+    <p>Bundle products together at a special price — e.g. two stickers and a pin for less than buying separately.</p>
+    <button class="btn btn-primary" onclick="App.openNewComboModal()">+ Create combo</button>
+  </div>`;
+
+  return `
+    <div class="view-header">
+      <h2>Combos</h2>
+      <button class="btn btn-primary" onclick="App.openNewComboModal()">+ Create combo</button>
+    </div>
+    ${ev.combos.length === 0 ? empty : `<div class="event-grid">${cards}</div>`}
+  `;
+}
+
+function openNewComboModal() {
+  const ev = getCurrentEvent();
+  openModal(buildComboModal(null, ev));
+}
+function openEditComboModal(id) {
+  const ev = getCurrentEvent();
+  const c = ev.combos.find(x => x.id === id);
+  openModal(buildComboModal(c, ev));
+}
+
+function buildComboModal(existing, ev) {
+  const rows = ev.products.map(p => {
+    const existingQty = existing ? (existing.items.find(i => i.productId === p.id)?.qty || 0) : 0;
+    return `
+      <div class="combo-row">
+        <span class="combo-row-name">${escapeHtml(p.name)} <span class="opt">(${fmtMoney(p.price)})</span></span>
+        <input type="number" min="0" step="1" value="${existingQty}" data-combo-qty data-pid="${p.id}" data-price="${p.price}" oninput="App.updateComboSummary()">
+      </div>`;
+  }).join('');
+
+  return `
+    <div class="modal-head"><h3>${existing ? 'Edit combo' : 'Create combo'}</h3></div>
+    <form onsubmit="return App.submitComboForm(event, ${existing ? `'${existing.id}'` : 'null'})">
+      <div class="modal-body">
+        <label>Combo name
+          <input type="text" name="name" required placeholder="e.g. Starter Bundle" value="${existing ? escapeHtml(existing.name) : ''}">
+        </label>
+        <label>Bundle price (${state.currency})
+          <input type="number" id="comboPriceInput" name="price" min="0" step="0.01" required value="${existing ? existing.price : ''}" oninput="App.updateComboSummary()">
+        </label>
+        <div class="field-block">
+          <span class="field-label">Included items <span class="opt">(set quantity for each)</span></span>
+          <div class="combo-rows">${rows}</div>
+        </div>
+        <div class="combo-summary" id="comboSummary"></div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" onclick="App.closeModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary">${existing ? 'Save changes' : 'Create combo'}</button>
+      </div>
+    </form>`;
+}
+
+function updateComboSummary() {
+  const rows = document.querySelectorAll('[data-combo-qty]');
+  let regular = 0, count = 0;
+  rows.forEach(r => {
+    const qty = Number(r.value) || 0;
+    const price = Number(r.dataset.price) || 0;
+    regular += qty * price;
+    count += qty;
+  });
+  const bundlePrice = Number(document.getElementById('comboPriceInput').value) || 0;
+  const savings = regular - bundlePrice;
+  const el = document.getElementById('comboSummary');
+  if (!el) return;
+  if (count === 0) { el.innerHTML = '<span class="opt">Pick at least one item above.</span>'; return; }
+  el.innerHTML = `Regular price: <strong>${fmtMoney(regular)}</strong>` +
+    (savings > 0 ? ` &middot; <span class="txt-mint">Customer saves ${fmtMoney(savings)}</span>` :
+      savings < 0 ? ` &middot; <span class="txt-amber">Bundle priced above regular total</span>` : '');
+}
+
+function submitComboForm(e, editingId) {
+  e.preventDefault();
+  const ev = getCurrentEvent();
+  const f = new FormData(e.target);
+  const name = f.get('name').trim();
+  const price = Number(f.get('price'));
+  const items = [];
+  document.querySelectorAll('[data-combo-qty]').forEach(r => {
+    const qty = Math.round(Number(r.value) || 0);
+    if (qty > 0) items.push({ productId: r.dataset.pid, qty });
+  });
+  if (!name || isNaN(price) || price < 0) { showToast('Please fill in the combo name and price.', 'error'); return false; }
+  if (items.length === 0) { showToast('Pick at least one product for the combo.', 'error'); return false; }
+  if (editingId) {
+    const c = ev.combos.find(x => x.id === editingId);
+    c.name = name; c.price = price; c.items = items;
+    showToast('Combo updated.', 'success');
+  } else {
+    ev.combos.push({ id: uid('cmb'), name, price, items, sold: 0 });
+    showToast('Combo created.', 'success');
+  }
+  saveState(); closeModal(); render();
+  return false;
+}
+
+function deleteComboConfirm(eventId, comboId) {
+  const ev = state.events.find(e => e.id === eventId);
+  const c = ev.combos.find(x => x.id === comboId);
+  requestConfirm(`Delete combo "${c.name}"? This can't be undone.`, 'deleteCombo', { eventId, comboId });
+}
+
+/* ---------------------------------------------------------
+   SELL VIEW
+   --------------------------------------------------------- */
+
+function setSellFilter(cat) { state.sellFilter = cat; render(); }
+
+function renderSellView() {
+  const ev = getCurrentEvent();
+  if (!ev) return renderNoEventPrompt('sell');
+  if (ev.products.length === 0) {
+    return `<div class="empty-state"><div class="empty-mark">&#128203;</div><h3>Nothing to sell yet</h3>
+      <p>Add products to "${escapeHtml(ev.name)}" in Setup before you start selling.</p>
+      <button class="btn btn-primary" onclick="App.setView('setup')">Go to Setup</button></div>`;
+  }
+
+  const categories = ['All', ...Array.from(new Set(ev.products.map(p => p.category)))];
+  const filterTabs = categories.map(c =>
+    `<button class="chip ${state.sellFilter === c ? 'active' : ''}" onclick="App.setSellFilter('${escapeHtml(c)}')">${escapeHtml(c)}</button>`
+  ).join('');
+
+  const showCombos = state.sellFilter === 'All' && ev.combos.length > 0;
+  const comboTiles = showCombos ? ev.combos.map(c => {
+    const remaining = getComboRemaining(ev, c.id);
+    const itemsList = c.items.map(ci => {
+      const p = ev.products.find(pp => pp.id === ci.productId);
+      return `${ci.qty}&times;${escapeHtml(p ? p.name : '?')}`;
+    }).join(' + ');
+    const soldOut = remaining <= 0;
+    return `
+    <button class="sell-tile combo-tile ${soldOut ? 'disabled' : ''}" ${soldOut ? 'disabled' : `onclick="App.addToCart('combo','${c.id}')"`}>
+      <span class="tag-badge tag-pink">COMBO</span>
+      <span class="tile-name">${escapeHtml(c.name)}</span>
+      <span class="tile-sub">${itemsList}</span>
+      <span class="tile-price">${fmtMoney(c.price)}</span>
+      <span class="tile-stock ${soldOut ? 'txt-danger' : isLowStock(remaining, remaining + c.sold || 1) ? 'txt-amber' : ''}">${soldOut ? 'Sold out' : remaining + ' left'}</span>
+    </button>`;
+  }).join('') : '';
+
+  const filteredProducts = ev.products.filter(p => state.sellFilter === 'All' || p.category === state.sellFilter);
+  const productTiles = filteredProducts.map(p => {
+    const remaining = getProductRemaining(ev, p.id);
+    const soldOut = remaining <= 0;
+    const low = isLowStock(remaining, p.stock);
+    return `
+    <button class="sell-tile ${soldOut ? 'disabled' : ''}" ${soldOut ? 'disabled' : `onclick="App.addToCart('product','${p.id}')"`}>
+      <span class="tag-badge ${categoryColorClass(p.category)}">${escapeHtml(p.category)}</span>
+      <span class="tile-name">${escapeHtml(p.name)}</span>
+      <span class="tile-price">${fmtMoney(p.price)}</span>
+      <span class="tile-stock ${soldOut ? 'txt-danger' : low ? 'txt-amber' : ''}">${soldOut ? 'Sold out' : remaining + ' left'}</span>
+    </button>`;
+  }).join('');
+
+  return `
+    <div class="sell-layout">
+      <div class="sell-main">
+        <div class="chip-row">${filterTabs}</div>
+        <div class="sell-grid">${comboTiles}${productTiles}</div>
+      </div>
+      <div class="cart-panel" id="cart-panel">
+        ${renderCartPanel(ev)}
+      </div>
+      <button class="mobile-cart-toggle" id="mobileCartToggle" onclick="App.toggleCart()">
+        <span>&#128722; ${state.cart.reduce((s, i) => s + i.qty, 0)} item(s)</span>
+        <span>${fmtMoney(cartTotal(ev))}</span>
+      </button>
+    </div>`;
+}
+
+function cartTotal(ev) {
+  return state.cart.reduce((s, item) => {
+    if (item.refType === 'product') {
+      const p = ev.products.find(pp => pp.id === item.refId);
+      return s + (p ? p.price * item.qty : 0);
+    } else {
+      const c = ev.combos.find(cc => cc.id === item.refId);
+      return s + (c ? c.price * item.qty : 0);
+    }
+  }, 0);
+}
+
+function renderCartPanel(ev) {
+  const lines = state.cart.map((item, idx) => {
+    let name, unitPrice;
+    if (item.refType === 'product') {
+      const p = ev.products.find(pp => pp.id === item.refId);
+      name = p ? p.name : '—'; unitPrice = p ? p.price : 0;
+    } else {
+      const c = ev.combos.find(cc => cc.id === item.refId);
+      name = c ? c.name + ' (combo)' : '—'; unitPrice = c ? c.price : 0;
+    }
+    return `
+    <div class="cart-line">
+      <div class="cart-line-info">
+        <span class="cart-line-name">${escapeHtml(name)}</span>
+        <span class="cart-line-unit">${fmtMoney(unitPrice)} each</span>
+      </div>
+      <div class="cart-line-qty">
+        <button class="qty-btn" onclick="App.incCartQty(${idx},-1)">&minus;</button>
+        <span>${item.qty}</span>
+        <button class="qty-btn" onclick="App.incCartQty(${idx},1)">&plus;</button>
+      </div>
+      <span class="cart-line-total">${fmtMoney(unitPrice * item.qty)}</span>
+      <button class="icon-btn" onclick="App.removeCartItem(${idx})">&times;</button>
+    </div>`;
+  }).join('');
+
+  const total = cartTotal(ev);
+  const recent = ev.transactions.slice(-5).reverse().map(t => `
+    <div class="recent-line ${t.voided ? 'voided' : ''}">
+      <div>
+        <span class="recent-time">${fmtDateTime(t.timestamp)}</span>
+        <span class="recent-items">${t.items.map(i => `${i.qty}&times;${escapeHtml(i.name)}`).join(', ')}</span>
+      </div>
+      <div class="recent-right">
+        <span>${fmtMoney(t.total)}</span>
+        ${t.voided ? '<span class="opt">Voided</span>' : `<button class="link-btn" onclick="App.voidTransactionConfirm('${ev.id}','${t.id}')">Void</button>`}
+      </div>
+    </div>`).join('');
+
+  return `
+    <div class="receipt">
+      <div class="receipt-head">
+        <h3>Current sale</h3>
+        ${state.cart.length ? `<button class="link-btn" onclick="App.clearCart()">Clear</button>` : ''}
+      </div>
+      <div class="receipt-lines">
+        ${state.cart.length ? lines : '<p class="opt receipt-empty">Tap a product or combo to add it here.</p>'}
+      </div>
+      <div class="receipt-total-row">
+        <span>Total</span>
+        <span class="receipt-total">${fmtMoney(total)}</span>
+      </div>
+      <button class="btn btn-primary btn-block" ${state.cart.length ? '' : 'disabled'} onclick="App.openCheckoutModal()">Charge ${fmtMoney(total)}</button>
+      <div class="receipt-tear"></div>
+    </div>
+    <div class="recent-activity">
+      <h4>Recent activity</h4>
+      ${recent || '<p class="opt">No sales recorded yet.</p>'}
+    </div>`;
+}
+
+function attachCartMountedBehaviors() { /* placeholder hook, kept for clarity/extensibility */ }
+
+function toggleCart() {
+  document.getElementById('cart-panel').classList.toggle('cart-open');
+}
+
+function addToCart(type, id) {
+  const ev = getCurrentEvent();
+  const existingIdx = state.cart.findIndex(i => i.refType === type && i.refId === id);
+  const remaining = type === 'product' ? getProductRemaining(ev, id) : getComboRemaining(ev, id);
+  if (remaining <= 0) { showToast('Not enough stock left.', 'error'); return; }
+  if (existingIdx >= 0) state.cart[existingIdx].qty += 1;
+  else state.cart.push({ refType: type, refId: id, qty: 1 });
+  saveState(); render();
+}
+
+function incCartQty(idx, delta) {
+  const ev = getCurrentEvent();
+  const item = state.cart[idx];
+  if (delta > 0) {
+    const remaining = item.refType === 'product' ? getProductRemaining(ev, item.refId, idx) : getComboRemaining(ev, item.refId, idx);
+    if (remaining <= 0) { showToast('Not enough stock left.', 'error'); return; }
+  }
+  item.qty += delta;
+  if (item.qty <= 0) state.cart.splice(idx, 1);
+  saveState(); render();
+}
+
+function removeCartItem(idx) {
+  state.cart.splice(idx, 1);
+  saveState(); render();
+}
+
+function clearCart() {
+  state.cart = [];
+  saveState(); render();
+}
+
+function openCheckoutModal() {
+  const ev = getCurrentEvent();
+  const total = cartTotal(ev);
+  openModal(`
+    <div class="modal-head"><h3>Complete sale</h3></div>
+    <form onsubmit="return App.submitCheckout(event)">
+      <div class="modal-body">
+        <p class="checkout-total">Total due: <strong>${fmtMoney(total)}</strong></p>
+        <label>Payment method
+          <select name="paymentMethod">
+            <option>Cash</option>
+            <option>Transfer</option>
+            <option>E-Wallet</option>
+            <option>Other</option>
+          </select>
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" onclick="App.closeModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary">Confirm &amp; complete sale</button>
+      </div>
+    </form>`);
+}
+
+function submitCheckout(e) {
+  e.preventDefault();
+  const ev = getCurrentEvent();
+  const f = new FormData(e.target);
+  processSale(ev, state.cart, f.get('paymentMethod'), Date.now());
+  state.cart = [];
+  saveState(); closeModal(); render();
+  showToast('Sale recorded!', 'success');
+  return false;
+}
+
+function voidTransactionConfirm(eventId, txId) {
+  requestConfirm('Void this transaction? Stock will be restored and it will be excluded from revenue.', 'voidTransaction', { eventId, txId });
+}
+
+/* ---------------------------------------------------------
+   STATS VIEW
+   --------------------------------------------------------- */
+
+function setStatsScope(scope) { state.statsScope = scope; saveState(); render(); }
+
+function renderStatsView() {
+  const ev = getCurrentEvent();
+  const scope = (!ev) ? 'all' : state.statsScope;
+  const stats = scope === 'event' ? eventStats(ev) : allEventsStats();
+
+  const scopeToggle = `
+    <div class="chip-row">
+      <button class="chip ${scope === 'event' ? 'active' : ''}" ${ev ? `onclick="App.setStatsScope('event')"` : 'disabled'}>This event</button>
+      <button class="chip ${scope === 'all' ? 'active' : ''}" onclick="App.setStatsScope('all')">All events</button>
+    </div>`;
+
+  const summary = `
+    <div class="stat-cards">
+      <div class="stat-card"><span class="stat-value">${fmtMoney(stats.revenue)}</span><span class="stat-label">Revenue</span></div>
+      <div class="stat-card"><span class="stat-value">${stats.txCount}</span><span class="stat-label">Transactions</span></div>
+      <div class="stat-card"><span class="stat-value">${stats.itemsSold}</span><span class="stat-label">Items sold</span></div>
+      <div class="stat-card"><span class="stat-value">${fmtMoney(stats.avg)}</span><span class="stat-label">Avg. sale</span></div>
+    </div>`;
+
+  const charts = `
+    <div class="chart-grid">
+      <div class="chart-card"><h4>Top sellers by revenue</h4><canvas id="barChart"></canvas></div>
+      <div class="chart-card"><h4>Cumulative revenue</h4><canvas id="lineChart"></canvas></div>
+    </div>`;
+
+  let stockTable = '';
+  if (scope === 'event' && ev) {
+    const rows = ev.products.map(p => {
+      const remaining = getProductRemaining(ev, p.id);
+      const pct = p.stock ? Math.max(0, Math.min(100, (remaining / p.stock) * 100)) : 0;
+      const low = isLowStock(remaining, p.stock);
+      return `<tr>
+        <td>${escapeHtml(p.name)}</td>
+        <td><span class="tag-badge ${categoryColorClass(p.category)}">${escapeHtml(p.category)}</span></td>
+        <td class="num">${p.stock}</td>
+        <td class="num">${p.sold}</td>
+        <td class="stock-cell"><div class="meter"><div class="meter-fill ${remaining <= 0 ? 'meter-empty' : low ? 'meter-low' : ''}" style="width:${pct}%"></div></div>
+        <span class="${remaining <= 0 ? 'txt-danger' : low ? 'txt-amber' : ''}">${remaining}</span></td>
+      </tr>`;
+    }).join('');
+    stockTable = ev.products.length ? `
+      <div class="table-wrap">
+        <h4>Stock remaining</h4>
+        <table><thead><tr><th>Product</th><th>Category</th><th class="num">Stock</th><th class="num">Sold</th><th>Remaining</th></tr></thead>
+        <tbody>${rows}</tbody></table>
+      </div>` : '';
+  }
+
+  const txSource = scope === 'event' ? ev.transactions : state.events.flatMap(e => e.transactions.map(t => ({ ...t, eventName: e.name })));
+  const txRows = txSource.slice().sort((a, b) => b.timestamp - a.timestamp).map(t => `
+    <tr class="${t.voided ? 'row-voided' : ''}">
+      <td>${fmtDateTime(t.timestamp)}</td>
+      ${scope === 'all' ? `<td>${escapeHtml(t.eventName)}</td>` : ''}
+      <td>${t.items.map(i => `${i.qty}&times;${escapeHtml(i.name)}`).join(', ')}</td>
+      <td class="num">${fmtMoney(t.total)}</td>
+      <td>${escapeHtml(t.paymentMethod)}</td>
+      <td>${t.voided ? '<span class="pill pill-muted">Voided</span>' : '<span class="pill pill-mint">Completed</span>'}</td>
+      <td>${(!t.voided && scope === 'event') ? `<button class="link-btn" onclick="App.voidTransactionConfirm('${ev.id}','${t.id}')">Void</button>` : ''}</td>
+    </tr>`).join('');
+
+  const txTable = `
+    <div class="table-wrap">
+      <div class="view-header compact"><h4>Transaction history</h4><button class="btn btn-ghost btn-sm" onclick="App.exportCSV()">Export CSV</button></div>
+      ${txSource.length ? `<table><thead><tr><th>Time</th>${scope === 'all' ? '<th>Event</th>' : ''}<th>Items</th><th class="num">Total</th><th>Payment</th><th>Status</th><th></th></tr></thead>
+      <tbody>${txRows}</tbody></table>` : '<p class="opt">No transactions yet.</p>'}
+    </div>`;
+
+  return `
+    <div class="view-header"><h2>Statistics</h2></div>
+    ${scopeToggle}
+    ${summary}
+    ${charts}
+    ${stockTable}
+    ${txTable}
+  `;
+}
+
+function cssVar(name) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
+function mountCharts() {
+  if (chartRefs.bar) { chartRefs.bar.destroy(); chartRefs.bar = null; }
+  if (chartRefs.line) { chartRefs.line.destroy(); chartRefs.line = null; }
+  const barCanvas = document.getElementById('barChart');
+  const lineCanvas = document.getElementById('lineChart');
+  if (!barCanvas || !lineCanvas || typeof Chart === 'undefined') return;
+
+  const ev = getCurrentEvent();
+  const scope = (!ev) ? 'all' : state.statsScope;
+  const txs = scope === 'event' ? ev.transactions.filter(t => !t.voided) :
+    state.events.flatMap(e => e.transactions.filter(t => !t.voided));
+
+  const revenueByName = {};
+  txs.forEach(t => t.items.forEach(i => { revenueByName[i.name] = (revenueByName[i.name] || 0) + i.lineTotal; }));
+  const sorted = Object.entries(revenueByName).sort((a, b) => b[1] - a[1]).slice(0, 8);
+
+  chartRefs.bar = new Chart(barCanvas, {
+    type: 'bar',
+    data: {
+      labels: sorted.map(s => s[0]),
+      datasets: [{ data: sorted.map(s => s[1]), backgroundColor: cssVar('--violet'), borderRadius: 6, maxBarThickness: 28 }]
+    },
+    options: {
+      indexAxis: 'y',
+      plugins: { legend: { display: false } },
+      scales: { x: { ticks: { callback: v => state.currency + v } } }
+    }
+  });
+
+  const ordered = txs.slice().sort((a, b) => a.timestamp - b.timestamp);
+  let cum = 0;
+  const cumData = ordered.map(t => { cum += t.total; return cum; });
+
+  chartRefs.line = new Chart(lineCanvas, {
+    type: 'line',
+    data: {
+      labels: ordered.map((t, i) => 'Sale ' + (i + 1)),
+      datasets: [{
+        data: cumData, borderColor: cssVar('--pink'), backgroundColor: cssVar('--pink-tint'),
+        fill: true, tension: 0.3, pointRadius: 2
+      }]
+    },
+    options: {
+      plugins: { legend: { display: false } },
+      scales: { y: { ticks: { callback: v => state.currency + v } } }
+    }
+  });
+}
+
+function exportCSV() {
+  const ev = getCurrentEvent();
+  const scope = (!ev) ? 'all' : state.statsScope;
+  const rows = [['Event', 'Timestamp', 'Items', 'Total', 'Payment', 'Status']];
+  const source = scope === 'event' ? ev.transactions.map(t => ({ ...t, eventName: ev.name })) :
+    state.events.flatMap(e => e.transactions.map(t => ({ ...t, eventName: e.name })));
+  source.forEach(t => {
+    rows.push([
+      t.eventName,
+      new Date(t.timestamp).toISOString(),
+      t.items.map(i => `${i.qty}x ${i.name}`).join('; '),
+      t.total.toFixed(2),
+      t.paymentMethod,
+      t.voided ? 'Voided' : 'Completed'
+    ]);
+  });
+  const csv = rows.map(r => r.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'pinpoint-transactions.csv';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  showToast('CSV exported.', 'success');
+}
+
+/* ---------------------------------------------------------
+   SETTINGS
+   --------------------------------------------------------- */
+
+function openSettings() {
+  openModal(`
+    <div class="modal-head"><h3>Settings</h3></div>
+    <form onsubmit="return App.submitSettings(event)">
+      <div class="modal-body">
+        <label>Currency symbol
+          <input type="text" name="currency" maxlength="4" value="${escapeHtml(state.currency)}">
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" onclick="App.closeModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save</button>
+      </div>
+    </form>
+    <div class="modal-body danger-zone">
+      <h4>Danger zone</h4>
+      <p class="opt">Erases every event, product, combo, and transaction on this device.</p>
+      <button class="btn btn-danger btn-sm" onclick="App.clearAllDataConfirm()">Clear all data</button>
+    </div>
+  `);
+}
+
+function submitSettings(e) {
+  e.preventDefault();
+  const f = new FormData(e.target);
+  const cur = f.get('currency').trim();
+  state.currency = cur || 'RM';
+  saveState(); closeModal(); render();
+  showToast('Settings saved.', 'success');
+  return false;
+}
+
+function clearAllDataConfirm() {
+  requestConfirm('This will permanently erase every event, product, combo, and transaction on this device. This cannot be undone.', 'clearAllData', null);
+}
+
+/* ---------------------------------------------------------
+   Expose
+   --------------------------------------------------------- */
+
+window.App = {
+  setView, goToEvent, switchEvent,
+  openNewEventModal, openEditEventModal, submitEventForm, toggleEventStatus, deleteEventConfirm,
+  setSetupTab, openNewProductModal, openEditProductModal, submitProductForm, deleteProductConfirm,
+  openNewComboModal, openEditComboModal, submitComboForm, deleteComboConfirm, updateComboSummary,
+  setSellFilter, addToCart, incCartQty, removeCartItem, clearCart, toggleCart,
+  openCheckoutModal, submitCheckout, voidTransactionConfirm,
+  setStatsScope, exportCSV,
+  openSettings, submitSettings, clearAllDataConfirm,
+  closeModal, confirmYes
+};
+
+document.addEventListener('DOMContentLoaded', initApp);
+
+</script>
+</body>
+</html>

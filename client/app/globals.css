@@ -1,0 +1,72 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink: #1A1B2E;
+  --color-ink-soft: #585A78;
+  --color-paper: #F5F4EF;
+  --color-card: #FFFFFF;
+  --color-violet: #4C3FD7;
+  --color-violet-dark: #362A9E;
+  --color-violet-tint: #EDEBFC;
+  --color-pink: #FF6B9D;
+  --color-pink-dark: #C23D6C;
+  --color-pink-tint: #FFE7EF;
+  --color-mint: #1F9D6C;
+  --color-mint-tint: #E4F7EE;
+  --color-amber: #B5730A;
+  --color-amber-tint: #FDF1DD;
+  --color-red: #C23A3E;
+  --color-red-tint: #FBE6E7;
+  --color-line: #E5E2D8;
+  --font-display: "Space Grotesk", "Inter", sans-serif;
+}
+
+:root {
+  --ink: #1A1B2E;
+  --ink-soft: #585A78;
+  --paper: #F5F4EF;
+  --card: #FFFFFF;
+  --violet: #4C3FD7;
+  --violet-dark: #362A9E;
+  --violet-tint: #EDEBFC;
+  --pink: #FF6B9D;
+  --pink-dark: #C23D6C;
+  --pink-tint: #FFE7EF;
+  --mint: #1F9D6C;
+  --mint-tint: #E4F7EE;
+  --amber: #B5730A;
+  --amber-tint: #FDF1DD;
+  --red: #C23A3E;
+  --red-tint: #FBE6E7;
+  --line: #E5E2D8;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+:focus-visible {
+  outline: 2px solid var(--violet);
+  outline-offset: 2px;
+}
+
+/* Tag badge colors (kept as utilities for the category hash lookup) */
+.tag-violet { background: var(--violet-tint); color: var(--violet-dark); }
+.tag-pink { background: var(--pink-tint); color: var(--pink-dark); }
+.tag-mint { background: var(--mint-tint); color: var(--mint); }
+.tag-amber { background: var(--amber-tint); color: var(--amber); }
+
+/* Chart.js containers */
+.chart-card canvas { max-height: 240px; }
+
+@layer components {
+  .num {
+    font-variant-numeric: tabular-nums;
+  }
+}
