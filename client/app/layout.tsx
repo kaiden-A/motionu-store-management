@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Space_Grotesk, Inter } from "next/font/google";
+import "@fortawesome/fontawesome-free/css/all.min.css";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 
@@ -16,8 +17,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "PinPoint — Event Sales Tracker",
-  description: "Record every sale, combo, and pre-order at your events.",
+  title: "Motion-U PinPoint — Events Sales Management System",
+  description:
+    "Record every sale, combo, and pre-order at your Motion-U events.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

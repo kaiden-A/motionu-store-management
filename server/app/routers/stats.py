@@ -71,7 +71,7 @@ def export_csv(
     import io
     from sqlalchemy import select
 
-    from app.models import Transaction
+    from app.models import Event, Transaction
 
     if scope == "event" and not event_id:
         raise HTTPException(status_code=400, detail="event_id required for event scope")

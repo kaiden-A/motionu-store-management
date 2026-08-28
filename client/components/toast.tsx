@@ -47,10 +47,14 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           <button
             key={t.id}
             onClick={() => dismiss(t.id)}
-            className={`px-5 py-2.5 rounded-full text-sm font-semibold text-white shadow-lg animate-in fade-in slide-in-from-bottom-2 ${
+            className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold text-white shadow-lg animate-in fade-in slide-in-from-bottom-2 ${
               t.type === "error" ? "bg-red" : "bg-ink"
             }`}
           >
+            <i
+              className={`fa-solid ${t.type === "error" ? "fa-circle-xmark" : "fa-circle-check"} text-[13px]`}
+              aria-hidden="true"
+            />
             {t.message}
           </button>
         ))}

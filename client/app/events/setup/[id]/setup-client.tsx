@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import {
   useProducts,
   useCombos,
@@ -14,10 +14,17 @@ import {
 import { useToast } from "@/components/toast";
 import { AppShell, EmptyState } from "@/components/shell";
 import { Modal, Field, inputClass } from "@/components/modal";
-import { formatMoney, isLowStock, categoryColorClass, CATEGORY_DEFAULTS } from "@/lib/format";
+import { formatMoney, isLowStock, categoryColorClass, PRODUCT_CATEGORIES } from "@/lib/format";
+import { useCurrentEvent } from "@/components/event-context";
 import type { Combo, Product } from "@/lib/types";
 
 export function SetupPage({ eventId }: { eventId: string; isAdmin: boolean }) {
+  const { setCurrentEventId } = useCurrentEvent();
+
+  useEffect(() => {
+    setCurrentEventId(eventId);
+  }, [eventId, setCurrentEventId]);
+
   const { data: products = [], isLoading } = useProducts(eventId);
   const { data: combos = [] } = useCombos(eventId);
   const createProduct = useCreateProduct();
@@ -59,18 +66,20 @@ export function SetupPage({ eventId }: { eventId: string; isAdmin: boolean }) {
             <h2 className="font-display text-[22px] font-bold">Products</h2>
             <button
               onClick={() => setProductModal({ mode: "create" })}
-              className="px-4 py-2.5 rounded-lg bg-violet text-white text-sm font-semibold hover:bg-violet-dark"
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-lg bg-violet text-white text-sm font-semibold hover:bg-violet-dark"
             >
-              + Add product
+              <i className="fa-solid fa-plus text-[12px]" aria-hidden="true" />
+              Add product
             </button>
           </div>
 
           {products.length === 0 ? (
-            <EmptyState mark="🧩" title="No products yet">
+            <EmptyState mark={<i className="fa-solid fa-puzzle-piece" aria-hidden="true" />} title="No products yet">
               Add what you&apos;ll be selling — stickers, pins, prints, whatever you&apos;ve got.
               <div className="mt-4">
-                <button onClick={() => setProductModal({ mode: "create" })} className="px-4 py-2.5 rounded-lg bg-violet text-white text-sm font-semibold">
-                  + Add product
+                <button onClick={() => setProductModal({ mode: "create" })} className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-lg bg-violet text-white text-sm font-semibold">
+                  <i className="fa-solid fa-plus text-[12px]" aria-hidden="true" />
+                  Add product
                 </button>
               </div>
             </EmptyState>
@@ -119,11 +128,11 @@ export function SetupPage({ eventId }: { eventId: string; isAdmin: boolean }) {
                           </span>
                         </td>
                         <td className="px-4 py-3 text-right whitespace-nowrap">
-                          <button onClick={() => setProductModal({ mode: "edit", product: p })} className="w-7 h-7 rounded-lg border border-line text-ink-soft text-[13px] hover:bg-paper" title="Edit">
-                            ✎
+                          <button onClick={() => setProductModal({ mode: "edit", product: p })} className="w-7 h-7 rounded-lg border border-line text-ink-soft hover:bg-paper" title="Edit">
+                            <i className="fa-solid fa-pen text-[11px]" aria-hidden="true" />
                           </button>
-                          <button onClick={() => setDeleteProductTarget(p)} className="w-7 h-7 rounded-lg border border-line text-ink-soft text-[13px] hover:bg-paper ml-1" title="Delete">
-                            🗑
+                          <button onClick={() => setDeleteProductTarget(p)} className="w-7 h-7 rounded-lg border border-line text-ink-soft hover:bg-paper ml-1" title="Delete">
+                            <i className="fa-solid fa-trash text-[11px]" aria-hidden="true" />
                           </button>
                         </td>
                       </tr>
@@ -141,22 +150,24 @@ export function SetupPage({ eventId }: { eventId: string; isAdmin: boolean }) {
             <button
               onClick={() => setComboModal({ mode: "create" })}
               disabled={products.length === 0}
-              className="px-4 py-2.5 rounded-lg bg-violet text-white text-sm font-semibold hover:bg-violet-dark disabled:bg-[#C9C6E8] disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-lg bg-violet text-white text-sm font-semibold hover:bg-violet-dark disabled:bg-[#C9C6E8] disabled:cursor-not-allowed"
             >
-              + Create combo
+              <i className="fa-solid fa-plus text-[12px]" aria-hidden="true" />
+              Create combo
             </button>
           </div>
 
           {products.length === 0 ? (
-            <EmptyState mark="🎁" title="No products yet">
+            <EmptyState mark={<i className="fa-solid fa-gift" aria-hidden="true" />} title="No products yet">
               Add at least one product before building a combo.
             </EmptyState>
           ) : combos.length === 0 ? (
-            <EmptyState mark="🎁" title="No combos yet">
+            <EmptyState mark={<i className="fa-solid fa-gift" aria-hidden="true" />} title="No combos yet">
               Bundle products together at a special price — e.g. two stickers and a pin for less than buying separately.
               <div className="mt-4">
-                <button onClick={() => setComboModal({ mode: "create" })} className="px-4 py-2.5 rounded-lg bg-violet text-white text-sm font-semibold">
-                  + Create combo
+                <button onClick={() => setComboModal({ mode: "create" })} className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-lg bg-violet text-white text-sm font-semibold">
+                  <i className="fa-solid fa-plus text-[12px]" aria-hidden="true" />
+                  Create combo
                 </button>
               </div>
             </EmptyState>
@@ -168,11 +179,11 @@ export function SetupPage({ eventId }: { eventId: string; isAdmin: boolean }) {
                   <div className="flex justify-end items-start mb-2 pl-6">
                     <span className="px-2 py-0.5 rounded text-[11px] font-bold tag-pink">COMBO</span>
                     <div className="flex gap-1 ml-auto">
-                      <button onClick={() => setComboModal({ mode: "edit", combo: c })} className="w-7 h-7 rounded-lg border border-line text-ink-soft text-[13px] hover:bg-paper" title="Edit">
-                        ✎
+                      <button onClick={() => setComboModal({ mode: "edit", combo: c })} className="w-7 h-7 rounded-lg border border-line text-ink-soft hover:bg-paper" title="Edit">
+                        <i className="fa-solid fa-pen text-[11px]" aria-hidden="true" />
                       </button>
-                      <button onClick={() => setDeleteComboTarget(c)} className="w-7 h-7 rounded-lg border border-line text-ink-soft text-[13px] hover:bg-paper" title="Delete">
-                        🗑
+                      <button onClick={() => setDeleteComboTarget(c)} className="w-7 h-7 rounded-lg border border-line text-ink-soft hover:bg-paper" title="Delete">
+                        <i className="fa-solid fa-trash text-[11px]" aria-hidden="true" />
                       </button>
                     </div>
                   </div>
@@ -202,7 +213,6 @@ export function SetupPage({ eventId }: { eventId: string; isAdmin: boolean }) {
         <ProductModal
           mode={productModal.mode}
           product={"product" in productModal ? productModal.product : undefined}
-          products={products}
           onClose={() => setProductModal(null)}
           onSubmit={async (values) => {
             if (productModal.mode === "create") {
@@ -211,8 +221,8 @@ export function SetupPage({ eventId }: { eventId: string; isAdmin: boolean }) {
             } else {
               await updateProduct.mutateAsync({ id: productModal.product.id, body: values });
               toast("Product updated.");
+              setProductModal(null);
             }
-            setProductModal(null);
           }}
         />
       )}
@@ -298,27 +308,38 @@ export function SetupPage({ eventId }: { eventId: string; isAdmin: boolean }) {
 function ProductModal({
   mode,
   product,
-  products,
   onClose,
   onSubmit,
 }: {
   mode: "create" | "edit";
   product?: Product;
-  products: Product[];
   onClose: () => void;
   onSubmit: (values: { name: string; category: string; price: number; stock: number }) => void;
 }) {
-  const cats = Array.from(new Set([...CATEGORY_DEFAULTS, ...products.map((p) => p.category)]));
+  const [name, setName] = useState(product?.name ?? "");
+  const [category, setCategory] = useState(product?.category ?? PRODUCT_CATEGORIES[0]);
+  const [price, setPrice] = useState(product ? String(product.price) : "");
+  const [stock, setStock] = useState(product ? String(product.stock) : "");
+  const [busy, setBusy] = useState(false);
+  const [justAdded, setJustAdded] = useState(false);
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const f = new FormData(e.currentTarget);
-    const name = String(f.get("name") || "").trim();
-    const category = String(f.get("category") || "").trim();
-    const price = Number(f.get("price"));
-    const stock = Math.round(Number(f.get("stock")));
-    if (!name || !category || isNaN(price) || price < 0 || isNaN(stock) || stock < 0) return;
-    onSubmit({ name, category, price, stock });
+    const p = Number(price);
+    const s = Math.round(Number(stock));
+    if (!name.trim() || isNaN(p) || p < 0 || isNaN(s) || s < 0) return;
+    setBusy(true);
+    try {
+      await onSubmit({ name: name.trim(), category, price: p, stock: s });
+      if (mode === "create") {
+        setName("");
+        setPrice("");
+        setStock("");
+        setJustAdded(true);
+      }
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -327,31 +348,78 @@ function ProductModal({
       onClose={onClose}
       footer={
         <>
-          <button onClick={onClose} className="px-4 py-2 rounded-lg border border-line font-semibold text-sm">Cancel</button>
-          <button type="submit" form="product-form" className="px-4 py-2 rounded-lg bg-violet text-white font-semibold text-sm">
+          <button onClick={onClose} className="px-4 py-2 rounded-lg border border-line font-semibold text-sm">
+            {mode === "create" ? "Done" : "Cancel"}
+          </button>
+          <button
+            type="submit"
+            form="product-form"
+            disabled={busy}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-violet text-white font-semibold text-sm hover:bg-violet-dark disabled:opacity-60"
+          >
+            {mode === "create" && (
+              <i className="fa-solid fa-plus text-[11px]" aria-hidden="true" />
+            )}
             {mode === "create" ? "Add product" : "Save changes"}
           </button>
         </>
       }
     >
+      {mode === "create" && justAdded && (
+        <div className="flex items-center gap-2 rounded-lg bg-mint-tint text-mint px-3 py-2 text-[13px] font-semibold">
+          <i className="fa-solid fa-circle-check text-[13px]" aria-hidden="true" />
+          Added — set up the next one or press Done.
+        </div>
+      )}
       <form id="product-form" onSubmit={handleSubmit} className="flex flex-col gap-3.5">
         <Field label="Item name">
-          <input name="name" required placeholder="e.g. Star Sticker" defaultValue={product?.name} className={inputClass} />
+          <input
+            name="name"
+            required
+            placeholder="e.g. Iced Latte"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className={inputClass}
+          />
         </Field>
         <Field label="Category">
-          <input name="category" list="category-options" required placeholder="e.g. Sticker" defaultValue={product?.category} className={inputClass} />
-          <datalist id="category-options">
-            {cats.map((c) => (
-              <option key={c} value={c} />
+          <select
+            name="category"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            className={inputClass}
+          >
+            {PRODUCT_CATEGORIES.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
             ))}
-          </datalist>
+          </select>
         </Field>
         <div className="flex gap-3">
           <Field label={`Price (RM)`}>
-            <input type="number" name="price" min={0} step={0.01} required defaultValue={product?.price} className={inputClass} />
+            <input
+              type="number"
+              name="price"
+              min={0}
+              step={0.01}
+              required
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              className={inputClass}
+            />
           </Field>
           <Field label="Target stock">
-            <input type="number" name="stock" min={0} step={1} required defaultValue={product?.stock} className={inputClass} />
+            <input
+              type="number"
+              name="stock"
+              min={0}
+              step={1}
+              required
+              value={stock}
+              onChange={(e) => setStock(e.target.value)}
+              className={inputClass}
+            />
           </Field>
         </div>
       </form>

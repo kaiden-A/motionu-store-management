@@ -20,7 +20,7 @@ export function Modal({ title, onClose, children, footer }: ModalProps) {
 
   return (
     <div
-      className="fixed inset-0 z-40 flex items-center justify-center bg-ink/45 backdrop-blur-[2px] p-5"
+      className="fixed inset-0 z-40 flex items-center justify-center bg-ink/45 backdrop-blur-[2px] p-4 sm:p-5"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}

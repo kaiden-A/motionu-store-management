@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useProducts, useCombos, useRecentTransactions, useCheckout, useVoidTransaction } from "@/lib/queries";
 import { useToast } from "@/components/toast";
 import { AppShell, EmptyState } from "@/components/shell";
 import { Modal, Field, inputClass } from "@/components/modal";
 import { formatMoney, isLowStock, categoryColorClass, PAYMENT_METHODS } from "@/lib/format";
+import { useCurrentEvent } from "@/components/event-context";
 import type { CartLine, Combo, PaymentMethod, Product, Transaction } from "@/lib/types";
 
 interface CartItem {
@@ -15,6 +16,12 @@ interface CartItem {
 }
 
 export function SellPage({ eventId, isAdmin }: { eventId: string; isAdmin: boolean }) {
+  const { setCurrentEventId } = useCurrentEvent();
+
+  useEffect(() => {
+    setCurrentEventId(eventId);
+  }, [eventId, setCurrentEventId]);
+
   const { data: products = [], isLoading: loadingProducts } = useProducts(eventId);
   const { data: combos = [] } = useCombos(eventId);
   const { data: recent = [] } = useRecentTransactions(eventId, 5);
@@ -25,6 +32,7 @@ export function SellPage({ eventId, isAdmin }: { eventId: string; isAdmin: boole
   const [cart, setCart] = useState<CartItem[]>([]);
   const [filter, setFilter] = useState("All");
   const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [cartSheetOpen, setCartSheetOpen] = useState(false);
   const [voidTarget, setVoidTarget] = useState<Transaction | null>(null);
 
   const categories = useMemo(
@@ -110,12 +118,13 @@ export function SellPage({ eventId, isAdmin }: { eventId: string; isAdmin: boole
   return (
     <AppShell>
       {products.length === 0 ? (
-        <EmptyState mark="🧾" title="Nothing to sell yet">
+        <EmptyState mark={<i className="fa-solid fa-receipt" aria-hidden="true" />} title="Nothing to sell yet">
           {isAdmin
             ? `Add products to this event in Setup before you start selling.`
             : "The organizer hasn't added any products for this event yet."}
         </EmptyState>
       ) : (
+        <>
         <div className="flex gap-6 items-start">
           <div className="flex-1 min-w-0">
             <div className="flex gap-2 flex-wrap mb-4">
@@ -189,107 +198,84 @@ export function SellPage({ eventId, isAdmin }: { eventId: string; isAdmin: boole
             </div>
           </div>
 
-          <div className="w-[340px] shrink-0">
-            <div className="bg-card border border-line rounded-[14px] p-4 pb-7 shadow-sm relative">
-              <div className="flex justify-between items-center mb-2.5">
-                <h3 className="font-display font-bold">Current sale</h3>
-                {cart.length > 0 && (
-                  <button onClick={() => setCart([])} className="text-[13px] font-semibold text-violet">
-                    Clear
-                  </button>
-                )}
-              </div>
-              <div className="flex flex-col gap-2.5 max-h-[320px] overflow-y-auto pb-1.5">
-                {cart.length === 0 ? (
-                  <p className="text-center py-5 text-ink-soft text-[13px]">
-                    Tap a product or combo to add it here.
-                  </p>
-                ) : (
-                  cart.map((item, idx) => {
-                    let name = "—";
-                    let unit = 0;
-                    if (item.ref_type === "product") {
-                      const p = products.find((x) => x.id === item.ref_id);
-                      name = p?.name || "—";
-                      unit = p?.price || 0;
-                    } else {
-                      const c = combos.find((x) => x.id === item.ref_id);
-                      name = c ? `${c.name} (combo)` : "—";
-                      unit = c?.price || 0;
-                    }
-                    return (
-                      <div key={idx} className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-2 pb-2 border-b border-dashed border-line num">
-                        <div className="min-w-0">
-                          <div className="font-semibold text-[13px] truncate">{name}</div>
-                          <div className="text-[11px] text-ink-soft">{formatMoney(unit)} each</div>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <button onClick={() => incQty(idx, -1)} className="w-[22px] h-[22px] rounded border border-line bg-paper font-bold leading-none">−</button>
-                          <span className="text-[13px]">{item.qty}</span>
-                          <button onClick={() => incQty(idx, 1)} className="w-[22px] h-[22px] rounded border border-line bg-paper font-bold leading-none">+</button>
-                        </div>
-                        <span className="font-bold text-[13px]">{formatMoney(unit * item.qty)}</span>
-                        <button
-                          onClick={() => setCart((prev) => prev.filter((_, n) => n !== idx))}
-                          className="w-[30px] h-[30px] rounded-lg border border-line text-ink-soft text-[14px] hover:bg-paper"
-                          aria-label="Remove"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-              <div className="flex justify-between items-center mt-3.5 mb-3 pt-2.5 border-t border-line">
-                <span className="text-[13px]">Total</span>
-                <span className="font-display text-xl font-bold num">{formatMoney(cartTotal)}</span>
-              </div>
-              <button
-                disabled={cart.length === 0}
-                onClick={() => setCheckoutOpen(true)}
-                className="w-full py-2.5 rounded-lg bg-violet text-white text-sm font-semibold hover:bg-violet-dark disabled:bg-[#C9C6E8] disabled:cursor-not-allowed"
-              >
-                Charge {formatMoney(cartTotal)}
-              </button>
-              <div className="absolute left-0 right-0 -bottom-px h-2.5 bg-[repeating-linear-gradient(-45deg,var(--paper)_0_6px,transparent_6px_12px)] rounded-b-[14px]" />
-            </div>
+          <div className="w-[340px] shrink-0 hidden lg:flex flex-col gap-4">
+            <CartPanel
+              cart={cart}
+              products={products}
+              combos={combos}
+              cartTotal={cartTotal}
+              onInc={(idx) => incQty(idx, 1)}
+              onDec={(idx) => incQty(idx, -1)}
+              onRemove={(idx) => setCart((prev) => prev.filter((_, n) => n !== idx))}
+              onClear={() => setCart([])}
+              onCharge={() => setCheckoutOpen(true)}
+            />
+            <RecentActivity recent={recent} isAdmin={isAdmin} onVoid={setVoidTarget} />
+          </div>
+        </div>
 
-            <div className="mt-4">
-              <h4 className="mb-2 text-ink-soft text-xs uppercase tracking-wider">Recent activity</h4>
-              {recent.length === 0 ? (
-                <p className="text-ink-soft text-[12.5px]">No sales recorded yet.</p>
-              ) : (
-                recent.map((t) => (
-                  <div
-                    key={t.id}
-                    className={`flex justify-between gap-2.5 py-2 border-b border-line text-[12.5px] ${t.status === "voided" ? "opacity-50" : ""}`}
-                  >
-                    <div className="min-w-0">
-                      <span className="block text-[11px] text-ink-soft">
-                        {new Date(t.timestamp).toLocaleDateString(undefined, { month: "short", day: "numeric" })}{" "}
-                        · {new Date(t.timestamp).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}
-                      </span>
-                      <span className="block truncate max-w-[190px]">
-                        {t.items.map((i) => `${i.qty}×${i.name}`).join(", ")}
-                      </span>
-                      {t.seller_name && <span className="block text-[11px] text-ink-soft">by {t.seller_name}</span>}
-                    </div>
-                    <div className="text-right flex flex-col items-end gap-0.5 font-semibold">
-                      <span className="num">{formatMoney(t.total)}</span>
-                      {t.status === "voided" ? (
-                        <span className="text-ink-soft font-normal">Voided</span>
-                      ) : (
-                        isAdmin && (
-                          <button onClick={() => setVoidTarget(t)} className="text-violet font-semibold text-[12px]">
-                            Void
-                          </button>
-                        )
-                      )}
-                    </div>
-                  </div>
-                ))
-              )}
+        <div className="mt-5 lg:hidden">
+          <RecentActivity recent={recent} isAdmin={isAdmin} onVoid={setVoidTarget} />
+        </div>
+        </>
+      )}
+
+      {cart.length > 0 && (
+        <div className="lg:hidden fixed inset-x-0 z-20 px-3 pb-2 pointer-events-none bottom-[calc(3.5rem+env(safe-area-inset-bottom))]">
+          <button
+            onClick={() => setCartSheetOpen(true)}
+            className="pointer-events-auto w-full bg-ink text-white rounded-2xl px-4 py-3 flex items-center justify-between gap-3 shadow-lg"
+          >
+            <span className="flex items-center gap-2 text-sm font-semibold min-w-0">
+              <i className="fa-solid fa-cart-shopping text-[15px]" aria-hidden="true" />
+              <span className="truncate">
+                {cart.reduce((s, i) => s + i.qty, 0)} item
+                {cart.reduce((s, i) => s + i.qty, 0) === 1 ? "" : "s"} in cart
+              </span>
+            </span>
+            <span className="flex items-center gap-3 shrink-0">
+              <span className="font-display text-[15px] font-bold num">{formatMoney(cartTotal)}</span>
+              <span className="bg-violet text-white rounded-xl px-4 py-2 text-sm font-semibold inline-flex items-center gap-1.5">
+                <i className="fa-solid fa-credit-card text-[12px]" aria-hidden="true" />
+                Charge
+              </span>
+            </span>
+          </button>
+        </div>
+      )}
+
+      {cartSheetOpen && (
+        <div className="fixed inset-0 z-40 lg:hidden">
+          <div
+            className="absolute inset-0 bg-ink/45 backdrop-blur-[2px]"
+            onClick={() => setCartSheetOpen(false)}
+          />
+          <div className="absolute inset-x-0 bottom-0 max-h-[82dvh] bg-card rounded-t-2xl shadow-xl flex flex-col">
+            <div className="relative px-4 pt-2 pb-1 shrink-0">
+              <div className="mx-auto w-10 h-1 rounded-full bg-line" />
+              <button
+                onClick={() => setCartSheetOpen(false)}
+                aria-label="Close cart"
+                className="absolute right-3 top-3 w-8 h-8 rounded-lg flex items-center justify-center text-ink-soft hover:bg-paper"
+              >
+                <i className="fa-solid fa-xmark text-[15px]" aria-hidden="true" />
+              </button>
+            </div>
+            <div className="overflow-y-auto px-4 pb-6 flex-1">
+              <CartPanel
+                cart={cart}
+                products={products}
+                combos={combos}
+                cartTotal={cartTotal}
+                onInc={(idx) => incQty(idx, 1)}
+                onDec={(idx) => incQty(idx, -1)}
+                onRemove={(idx) => setCart((prev) => prev.filter((_, n) => n !== idx))}
+                onClear={() => setCart([])}
+                onCharge={() => {
+                  setCartSheetOpen(false);
+                  setCheckoutOpen(true);
+                }}
+              />
             </div>
           </div>
         </div>
@@ -335,8 +321,9 @@ export function SellPage({ eventId, isAdmin }: { eventId: string; isAdmin: boole
                     onError: (e) => toast(e instanceof Error ? e.message : "Failed to void.", "error"),
                   });
                 }}
-                className="px-4 py-2 rounded-lg bg-red text-white font-semibold text-sm"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-red text-white font-semibold text-sm"
               >
+                <i className="fa-solid fa-ban text-[13px]" aria-hidden="true" />
                 Void
               </button>
             </>
@@ -348,6 +335,149 @@ export function SellPage({ eventId, isAdmin }: { eventId: string; isAdmin: boole
         </Modal>
       )}
     </AppShell>
+  );
+}
+
+function CartPanel({
+  cart,
+  products,
+  combos,
+  cartTotal,
+  onInc,
+  onDec,
+  onRemove,
+  onClear,
+  onCharge,
+}: {
+  cart: CartItem[];
+  products: Product[];
+  combos: Combo[];
+  cartTotal: number;
+  onInc: (idx: number) => void;
+  onDec: (idx: number) => void;
+  onRemove: (idx: number) => void;
+  onClear: () => void;
+  onCharge: () => void;
+}) {
+  return (
+    <div className="bg-card border border-line rounded-[14px] p-4 pb-7 shadow-sm relative">
+      <div className="flex justify-between items-center mb-2.5">
+        <h3 className="font-display font-bold">Current sale</h3>
+        {cart.length > 0 && (
+          <button onClick={onClear} className="text-[13px] font-semibold text-violet">
+            Clear
+          </button>
+        )}
+      </div>
+      <div className="flex flex-col gap-2.5 max-h-[320px] overflow-y-auto pb-1.5">
+        {cart.length === 0 ? (
+          <p className="text-center py-5 text-ink-soft text-[13px]">
+            Tap a product or combo to add it here.
+          </p>
+        ) : (
+          cart.map((item, idx) => {
+            let name = "—";
+            let unit = 0;
+            if (item.ref_type === "product") {
+              const p = products.find((x) => x.id === item.ref_id);
+              name = p?.name || "—";
+              unit = p?.price || 0;
+            } else {
+              const c = combos.find((x) => x.id === item.ref_id);
+              name = c ? `${c.name} (combo)` : "—";
+              unit = c?.price || 0;
+            }
+            return (
+              <div key={idx} className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-2 pb-2 border-b border-dashed border-line num">
+                <div className="min-w-0">
+                  <div className="font-semibold text-[13px] truncate">{name}</div>
+                  <div className="text-[11px] text-ink-soft">{formatMoney(unit)} each</div>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <button onClick={() => onDec(idx)} className="w-[26px] h-[26px] rounded border border-line bg-paper font-bold leading-none flex items-center justify-center" aria-label="Decrease quantity">
+                    <i className="fa-solid fa-minus text-[9px]" aria-hidden="true" />
+                  </button>
+                  <span className="text-[13px] min-w-[18px] text-center">{item.qty}</span>
+                  <button onClick={() => onInc(idx)} className="w-[26px] h-[26px] rounded border border-line bg-paper font-bold leading-none flex items-center justify-center" aria-label="Increase quantity">
+                    <i className="fa-solid fa-plus text-[9px]" aria-hidden="true" />
+                  </button>
+                </div>
+                <span className="font-bold text-[13px]">{formatMoney(unit * item.qty)}</span>
+                <button
+                  onClick={() => onRemove(idx)}
+                  className="w-[30px] h-[30px] rounded-lg border border-line text-ink-soft hover:bg-paper flex items-center justify-center"
+                  aria-label="Remove"
+                >
+                  <i className="fa-solid fa-xmark text-[13px]" aria-hidden="true" />
+                </button>
+              </div>
+            );
+          })
+        )}
+      </div>
+      <div className="flex justify-between items-center mt-3.5 mb-3 pt-2.5 border-t border-line">
+        <span className="text-[13px]">Total</span>
+        <span className="font-display text-xl font-bold num">{formatMoney(cartTotal)}</span>
+      </div>
+      <button
+        disabled={cart.length === 0}
+        onClick={onCharge}
+        className="w-full py-2.5 rounded-lg bg-violet text-white text-sm font-semibold hover:bg-violet-dark disabled:bg-[#C9C6E8] disabled:cursor-not-allowed"
+      >
+        <i className="fa-solid fa-credit-card text-[12px] mr-1.5" aria-hidden="true" />
+        Charge {formatMoney(cartTotal)}
+      </button>
+      <div className="absolute left-0 right-0 -bottom-px h-2.5 bg-[repeating-linear-gradient(-45deg,var(--paper)_0_6px,transparent_6px_12px)] rounded-b-[14px]" />
+    </div>
+  );
+}
+
+function RecentActivity({
+  recent,
+  isAdmin,
+  onVoid,
+}: {
+  recent: Transaction[];
+  isAdmin: boolean;
+  onVoid: (t: Transaction) => void;
+}) {
+  return (
+    <div>
+      <h4 className="mb-2 text-ink-soft text-xs uppercase tracking-wider">Recent activity</h4>
+      {recent.length === 0 ? (
+        <p className="text-ink-soft text-[12.5px]">No sales recorded yet.</p>
+      ) : (
+        recent.map((t) => (
+          <div
+            key={t.id}
+            className={`flex justify-between gap-2.5 py-2 border-b border-line text-[12.5px] ${t.status === "voided" ? "opacity-50" : ""}`}
+          >
+            <div className="min-w-0">
+              <span className="block text-[11px] text-ink-soft">
+                {new Date(t.timestamp).toLocaleDateString(undefined, { month: "short", day: "numeric" })}{" "}
+                · {new Date(t.timestamp).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}
+              </span>
+              <span className="block truncate max-w-[190px]">
+                {t.items.map((i) => `${i.qty}×${i.name}`).join(", ")}
+              </span>
+              {t.seller_name && <span className="block text-[11px] text-ink-soft">by {t.seller_name}</span>}
+            </div>
+            <div className="text-right flex flex-col items-end gap-0.5 font-semibold">
+              <span className="num">{formatMoney(t.total)}</span>
+              {t.status === "voided" ? (
+                <span className="text-ink-soft font-normal">Voided</span>
+              ) : (
+                isAdmin && (
+                  <button onClick={() => onVoid(t)} className="text-violet font-semibold text-[12px]">
+                    Void
+                  </button>
+                )
+              )}
+            </div>
+          </div>
+        ))
+      )}
+    </div>
   );
 }
 
@@ -400,7 +530,8 @@ function CheckoutModal({
       footer={
         <>
           <button onClick={onClose} className="px-4 py-2 rounded-lg border border-line font-semibold text-sm">Cancel</button>
-          <button type="submit" form="checkout-form" className="px-4 py-2 rounded-lg bg-violet text-white font-semibold text-sm">
+          <button type="submit" form="checkout-form" className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-violet text-white font-semibold text-sm">
+            <i className="fa-solid fa-circle-check text-[13px]" aria-hidden="true" />
             Confirm &amp; complete sale
           </button>
         </>

@@ -28,12 +28,12 @@ async function proxyHandler(request: NextRequest, { params }: { params: Promise<
 
   if (contentType.includes('text/csv')) {
     const text = await upstream.text()
+    const headers: HeadersInit = { 'Content-Type': contentType }
+    const disposition = upstream.headers.get('content-disposition')
+    if (disposition) headers['Content-Disposition'] = disposition
     return new NextResponse(text, {
       status: upstream.status,
-      headers: {
-        'Content-Type': contentType,
-        'Content-Disposition': upstream.headers.get('content-disposition') || '',
-      },
+      headers,
     })
   }
 

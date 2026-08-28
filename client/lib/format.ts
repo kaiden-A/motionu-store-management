@@ -30,7 +30,7 @@ export function isLowStock(remaining: number, stock: number): boolean {
 
 export const LOW_STOCK_MIN = 3
 export const LOW_STOCK_RATIO = 0.15
-export const CATEGORY_DEFAULTS = ['Sticker', 'Enamel Pin', 'Print', 'Keychain', 'Charm', 'Other']
+export const PRODUCT_CATEGORIES = ['Beverage', 'Food', 'Merch']
 export const PAYMENT_METHODS: string[] = ['Cash', 'Transfer', 'E-Wallet', 'Other']
 
 const PALETTE = ['violet', 'pink', 'mint', 'amber']

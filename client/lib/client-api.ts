@@ -19,7 +19,7 @@ function extractDetail(data: unknown): unknown {
 }
 
 export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const res = await fetch(`/api/backend${path}`, {
+  const res = await fetch(`/api${path}`, {
     ...init,
     headers: {
       ...(init.body ? { 'Content-Type': 'application/json' } : {}),

@@ -1,11 +1,11 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { isAdmin } from "@/lib/auth";
-import { SellPage } from "@/app/events/[id]/sell/sell-client";
+import { StatsPage } from "@/app/events/stats/[id]/stats-client";
 
-export default async function SellRoute({ params }: { params: Promise<{ id: string }> }) {
+export default async function StatsRoute({ params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
   if (!session) redirect("/login");
   const { id } = await params;
-  return <SellPage eventId={id} isAdmin={isAdmin(session.roles)} />;
+  return <StatsPage eventId={id} isAdmin={isAdmin(session.roles)} />;
 }

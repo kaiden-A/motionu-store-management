@@ -35,12 +35,12 @@ export function PreOrdersPage() {
     <AppShell>
       <ViewHeader title="Pre-orders" />
 
-      <div className="mb-5">
-        <label className="text-xs uppercase tracking-wider text-ink-soft mr-2">Event</label>
+      <div className="mb-5 flex flex-wrap items-center gap-2">
+        <label className="text-xs uppercase tracking-wider text-ink-soft">Event</label>
         <select
           value={eventFilter}
           onChange={(e) => setEventFilter(e.target.value)}
-          className="border border-line rounded-lg px-2.5 py-2 bg-card text-ink font-semibold"
+          className="border border-line rounded-lg px-2.5 py-2 bg-card text-ink font-semibold min-w-0 max-w-full"
         >
           <option value="">All events</option>
           {events.map((e) => (
@@ -54,7 +54,7 @@ export function PreOrdersPage() {
       {isLoading ? (
         <p className="text-ink-soft">Loading…</p>
       ) : filtered.length === 0 ? (
-        <EmptyState mark="📦" title="Nothing waiting">
+        <EmptyState mark={<i className="fa-solid fa-box" aria-hidden="true" />} title="Nothing waiting">
           Pre-orders you take (paid now, item handed over later) will show up here.
         </EmptyState>
       ) : (
@@ -76,6 +76,7 @@ export function PreOrdersPage() {
                     </div>
                     <div className="text-[12.5px] text-ink-soft mt-0.5">
                       {eventName(p.event_id)} · placed {formatDateTime(p.timestamp)}
+                      {p.seller_name ? ` · by ${p.seller_name}` : ""}
                     </div>
                     <div className="text-[13px] mt-1.5">
                       {p.items.map((i) => `${i.qty}×${i.name}`).join(", ")}

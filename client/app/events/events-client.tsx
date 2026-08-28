@@ -24,7 +24,7 @@ export function EventsPage({ isAdmin }: { isAdmin: boolean }) {
 
   const go = (eventId: string, view: "sell" | "setup" | "stats") => {
     setCurrentEventId(eventId);
-    router.push(`/events/${eventId}/${view}`);
+    router.push(`/events/${view}/${eventId}`);
   };
 
   if (isLoading) return <AppShell withTopbar={false}><p className="text-ink-soft">Loading events…</p></AppShell>;
@@ -37,16 +37,17 @@ export function EventsPage({ isAdmin }: { isAdmin: boolean }) {
           isAdmin && (
             <button
               onClick={() => setModal({ mode: "create" })}
-              className="px-4 py-2.5 rounded-lg bg-violet text-white text-sm font-semibold hover:bg-violet-dark transition-colors"
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-lg bg-violet text-white text-sm font-semibold hover:bg-violet-dark transition-colors"
             >
-              + New event
+              <i className="fa-solid fa-plus text-[12px]" aria-hidden="true" />
+              New event
             </button>
           )
         }
       />
 
       {events.length === 0 ? (
-        <EmptyState mark="📌" title={isAdmin ? "No events yet" : "No events yet"}>
+        <EmptyState mark={<i className="fa-solid fa-calendar-days" aria-hidden="true" />} title={isAdmin ? "No events yet" : "No events yet"}>
           {isAdmin
             ? "Create your first pop-up, market day, or con booth to start tracking what you sell."
             : "An organizer hasn't set up any events yet. Check back soon!"}
@@ -54,15 +55,16 @@ export function EventsPage({ isAdmin }: { isAdmin: boolean }) {
             <div className="mt-4">
               <button
                 onClick={() => setModal({ mode: "create" })}
-                className="px-4 py-2.5 rounded-lg bg-violet text-white text-sm font-semibold"
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-lg bg-violet text-white text-sm font-semibold"
               >
-                + New event
+                <i className="fa-solid fa-plus text-[12px]" aria-hidden="true" />
+                New event
               </button>
             </div>
           )}
         </EmptyState>
       ) : (
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-4">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-4">
           {events.map((ev) => (
             <div
               key={ev.id}
@@ -109,22 +111,25 @@ export function EventsPage({ isAdmin }: { isAdmin: boolean }) {
               <div className="flex gap-2 flex-wrap">
                 <button
                   onClick={() => go(ev.id, "sell")}
-                  className="px-3 py-1.5 rounded-lg bg-violet text-white text-[13px] font-semibold hover:bg-violet-dark"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet text-white text-[13px] font-semibold hover:bg-violet-dark"
                 >
+                  <i className="fa-solid fa-cart-shopping text-[11px]" aria-hidden="true" />
                   Sell
                 </button>
                 {isAdmin && (
                   <>
                     <button
                       onClick={() => go(ev.id, "setup")}
-                      className="px-3 py-1.5 rounded-lg border border-line text-[13px] font-semibold hover:bg-paper"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-line text-[13px] font-semibold hover:bg-paper"
                     >
+                      <i className="fa-solid fa-sliders text-[11px]" aria-hidden="true" />
                       Setup
                     </button>
                     <button
                       onClick={() => go(ev.id, "stats")}
-                      className="px-3 py-1.5 rounded-lg border border-line text-[13px] font-semibold hover:bg-paper"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-line text-[13px] font-semibold hover:bg-paper"
                     >
+                      <i className="fa-solid fa-chart-line text-[11px]" aria-hidden="true" />
                       Stats
                     </button>
                   </>
@@ -204,22 +209,25 @@ function EventKebab({
     <div className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="px-1.5 rounded text-ink-soft text-lg leading-none hover:bg-paper"
+        className="px-1.5 rounded text-ink-soft hover:bg-paper"
         aria-label="Event actions"
       >
-        ⋮
+        <i className="fa-solid fa-ellipsis-vertical" aria-hidden="true" />
       </button>
       {open && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
           <div className="absolute right-0 top-7 z-20 bg-card border border-line rounded-lg shadow-md min-w-[170px] flex flex-col p-1.5">
-            <button onClick={() => { setOpen(false); onEdit(); }} className="text-left px-2.5 py-2 rounded text-[13px] hover:bg-paper">
+            <button onClick={() => { setOpen(false); onEdit(); }} className="flex items-center gap-2 text-left px-2.5 py-2 rounded text-[13px] hover:bg-paper">
+              <i className="fa-solid fa-pen text-[11px]" aria-hidden="true" />
               Rename / Edit
             </button>
-            <button onClick={() => { setOpen(false); onToggle(); }} className="text-left px-2.5 py-2 rounded text-[13px] hover:bg-paper">
+            <button onClick={() => { setOpen(false); onToggle(); }} className="flex items-center gap-2 text-left px-2.5 py-2 rounded text-[13px] hover:bg-paper">
+              <i className="fa-solid fa-toggle-on text-[12px]" aria-hidden="true" />
               {event.status === "active" ? "Mark as ended" : "Mark as active"}
             </button>
-            <button onClick={() => { setOpen(false); onDelete(); }} className="text-left px-2.5 py-2 rounded text-[13px] text-red hover:bg-paper">
+            <button onClick={() => { setOpen(false); onDelete(); }} className="flex items-center gap-2 text-left px-2.5 py-2 rounded text-[13px] text-red hover:bg-paper">
+              <i className="fa-solid fa-trash text-[11px]" aria-hidden="true" />
               Delete event
             </button>
           </div>

@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { isAdmin } from "@/lib/auth";
-import { SetupPage } from "@/app/events/[id]/setup/setup-client";
+import { SetupPage } from "@/app/events/setup/[id]/setup-client";
 
 export default async function SetupRoute({ params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();

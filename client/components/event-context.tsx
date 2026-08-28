@@ -5,14 +5,20 @@ import {
   useCallback,
   useContext,
   useSyncExternalStore,
+  useState,
   type ReactNode,
 } from "react";
 
 const STORAGE_KEY = "pinpoint_current_event";
 
+export type EventView = "sell" | "setup" | "stats";
+
 interface EventSelectionContextValue {
   currentEventId: string | null;
   setCurrentEventId: (id: string) => void;
+  pendingView: EventView | null;
+  openEventPicker: (view: EventView) => void;
+  closeEventPicker: () => void;
 }
 
 const EventSelectionContext = createContext<EventSelectionContextValue | null>(null);
@@ -32,13 +38,24 @@ function getServerSnapshot() {
 
 export function EventSelectionProvider({ children }: { children: ReactNode }) {
   const currentEventId = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  const [pendingView, setPendingView] = useState<EventView | null>(null);
 
   const setCurrentEventId = useCallback((id: string) => {
     window.localStorage.setItem(STORAGE_KEY, id);
   }, []);
 
+  const openEventPicker = useCallback((view: EventView) => {
+    setPendingView(view);
+  }, []);
+
+  const closeEventPicker = useCallback(() => {
+    setPendingView(null);
+  }, []);
+
   return (
-    <EventSelectionContext.Provider value={{ currentEventId, setCurrentEventId }}>
+    <EventSelectionContext.Provider
+      value={{ currentEventId, setCurrentEventId, pendingView, openEventPicker, closeEventPicker }}
+    >
       {children}
     </EventSelectionContext.Provider>
   );

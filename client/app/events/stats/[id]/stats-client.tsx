@@ -1,15 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useStats, useStockTable, useAllTransactions, useVoidTransaction } from "@/lib/queries";
 import { useToast } from "@/components/toast";
 import { AppShell } from "@/components/shell";
 import { Modal } from "@/components/modal";
 import { TopSellersBar, CumulativeLine } from "@/components/charts";
 import { formatMoney, formatDateTime, isLowStock, categoryColorClass } from "@/lib/format";
+import { useCurrentEvent } from "@/components/event-context";
 import type { Transaction } from "@/lib/types";
 
 export function StatsPage({ eventId }: { eventId: string; isAdmin: boolean }) {
+  const { setCurrentEventId } = useCurrentEvent();
+
+  useEffect(() => {
+    setCurrentEventId(eventId);
+  }, [eventId, setCurrentEventId]);
+
   const [scope, setScope] = useState<"event" | "all">("event");
   const { data: stats, isLoading } = useStats(scope, eventId);
   const { data: stock = [] } = useStockTable(eventId);
@@ -129,7 +136,7 @@ export function StatsPage({ eventId }: { eventId: string; isAdmin: boolean }) {
             <div className="flex items-center justify-between px-4 pt-3.5">
               <h4 className="font-display font-bold">Transaction history</h4>
               <a
-                href={`/api/backend/stats/export?scope=${scope}${scope === "event" ? `&event_id=${eventId}` : ""}`}
+                href={`/api/stats/export?scope=${scope}${scope === "event" ? `&event_id=${eventId}` : ""}`}
                 className="px-3 py-1.5 rounded-lg border border-line text-[13px] font-semibold hover:bg-paper"
               >
                 Export CSV
@@ -138,10 +145,10 @@ export function StatsPage({ eventId }: { eventId: string; isAdmin: boolean }) {
             {history.length === 0 ? (
               <p className="text-ink-soft text-sm px-4 py-4">No transactions yet.</p>
             ) : (
-              <table className="w-full min-w-[640px] border-collapse">
+              <table className="w-full min-w-[720px] border-collapse">
                 <thead>
                   <tr>
-                    {["Time", "Items", "Total", "Payment", "Status", ""].map((h, i) => (
+                    {["Time", "Items", "Seller", "Total", "Payment", "Status", ""].map((h, i) => (
                       <th
                         key={i}
                         className={`text-left px-4 py-3 text-[11.5px] uppercase tracking-wider text-ink-soft font-semibold border-b border-line ${h === "Total" ? "text-right" : ""}`}
@@ -161,6 +168,7 @@ export function StatsPage({ eventId }: { eventId: string; isAdmin: boolean }) {
                     >
                       <td className="px-4 py-3 text-[13px]">{formatDateTime(t.timestamp)}</td>
                       <td className="px-4 py-3 text-[13px]">{t.items.map((i) => `${i.qty}×${i.name}`).join(", ")}</td>
+                      <td className="px-4 py-3 text-[13px]">{t.seller_name || "—"}</td>
                       <td className="px-4 py-3 text-right text-[13px] num">{formatMoney(t.total)}</td>
                       <td className="px-4 py-3 text-[13px]">{t.payment_method}</td>
                       <td className="px-4 py-3">

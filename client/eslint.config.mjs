@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Build artifacts at any nesting depth (e.g. a stray client/client/.next)
+    "**/.next/**",
+    "**/out/**",
   ]),
 ]);
 

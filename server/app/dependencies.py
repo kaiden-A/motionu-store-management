@@ -5,6 +5,7 @@ import httpx
 import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from jwt import PyJWK, PyJWKSet, get_unverified_header
 from pydantic import BaseModel
 
 from app.config import get_settings
@@ -13,6 +14,11 @@ bearer_scheme = HTTPBearer(auto_error=False)
 
 JWKS_CACHE: dict[str, Any] = {"keys": None, "fetched_at": 0.0}
 JWKS_TTL = 300  # seconds
+
+USERINFO_CACHE: dict[str, tuple[float, str]] = {}
+USERINFO_TTL = 900  # seconds
+
+BACKFILLED_SUBS: set[str] = set()
 
 
 class UserPrincipal(BaseModel):
@@ -63,12 +69,80 @@ def _extract_roles(claims: dict[str, Any]) -> list[str]:
     return sorted(roles)
 
 
+def _resolve_signing_key(jwks: PyJWKSet, token: str) -> PyJWK:
+    header = get_unverified_header(token)
+    kid = header.get("kid")
+    if kid:
+        for key in jwks:
+            if key.key_id == kid:
+                return key
+        raise jwt.InvalidTokenError(f"No key in JWKS matches kid {kid!r}")
+    return next(iter(jwks))
+
+
+def _resolve_display_name(access_token: str, sub: str, claims: dict[str, Any]) -> str:
+    """Best-effort display name from claims, then Zitadel userinfo (cached by sub)."""
+    name = claims.get("name") or claims.get("preferred_username") or ""
+    if name:
+        return name
+
+    settings = get_settings()
+    now = time.time()
+    cached = USERINFO_CACHE.get(sub)
+    if cached and now - cached[0] < USERINFO_TTL:
+        return cached[1]
+
+    resolved = ""
+    try:
+        resp = httpx.get(
+            f"{settings.issuer}/oidc/v1/userinfo",
+            headers={"Authorization": f"Bearer {access_token}"},
+            timeout=5,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        resolved = data.get("name") or data.get("preferred_username") or ""
+    except Exception:
+        resolved = ""
+
+    USERINFO_CACHE[sub] = (now, resolved)
+    return resolved
+
+
+def _backfill_name(sub: str, name: str) -> None:
+    """Fill in empty seller/organizer names recorded before userinfo resolution existed."""
+    from sqlalchemy import text
+
+    from app.database import SessionLocal
+
+    try:
+        with SessionLocal() as db:
+            db.execute(
+                text(
+                    "UPDATE transactions SET seller_name = :name "
+                    "WHERE seller_sub = :sub AND seller_name = ''"
+                ),
+                {"name": name, "sub": sub},
+            )
+            db.execute(
+                text(
+                    "UPDATE events SET created_by_name = :name "
+                    "WHERE created_by_sub = :sub AND created_by_name = ''"
+                ),
+                {"name": name, "sub": sub},
+            )
+            db.commit()
+    except Exception:
+        pass  # backfill is best-effort and must never break requests
+
+
 def verify_token(token: str) -> UserPrincipal:
     settings = get_settings()
     try:
+        jwks = PyJWKSet.from_dict(_fetch_jwks())
         payload = jwt.decode(
             token,
-            _fetch_jwks(),
+            _resolve_signing_key(jwks, token),
             algorithms=["RS256", "RS384", "RS512", "ES256", "ES384", "ES512", "EdDSA"],
             issuer=settings.issuer,
             audience=settings.zitadel_audience,
@@ -87,9 +161,15 @@ def verify_token(token: str) -> UserPrincipal:
             detail="User does not have a required role",
         )
 
+    sub = payload.get("sub", "")
+    name = _resolve_display_name(token, sub, payload)
+    if name and sub and sub not in BACKFILLED_SUBS:
+        _backfill_name(sub, name)
+        BACKFILLED_SUBS.add(sub)
+
     return UserPrincipal(
-        sub=payload.get("sub", ""),
-        name=payload.get("name") or payload.get("preferred_username") or "",
+        sub=sub,
+        name=name,
         email=payload.get("email", ""),
         roles=roles,
     )
