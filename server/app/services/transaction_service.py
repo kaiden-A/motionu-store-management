@@ -60,7 +60,7 @@ def _load_combos(db: Session, combo_ids: list[str]) -> dict[str, Combo]:
         select(Combo)
         .options(joinedload(Combo.items).joinedload(ComboItem.product))
         .where(Combo.id.in_(ids))
-        .with_for_update()
+        .with_for_update(of=Combo)
     ).unique().all()
     by_id = {c.id: c for c in rows}
     for cid in ids:
