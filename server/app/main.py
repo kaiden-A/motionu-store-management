@@ -2,7 +2,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
-from app.routers import combos, events, preorders, products, stats, transactions
+from app.routers import combos, events, preorders, products, public_preorders, stats, transactions
+from app.routers import settings as settings_router
 
 settings = get_settings()
 
@@ -26,6 +27,8 @@ app.include_router(products.router, prefix="/api/v1")
 app.include_router(combos.router, prefix="/api/v1")
 app.include_router(transactions.router, prefix="/api/v1")
 app.include_router(preorders.router, prefix="/api/v1")
+app.include_router(settings_router.router, prefix="/api/v1")
+app.include_router(public_preorders.router, prefix="/api/v1")
 app.include_router(stats.router, prefix="/api/v1")
 
 

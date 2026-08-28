@@ -132,6 +132,33 @@ def send_ready_for_pickup(tx: Transaction, event: Event) -> None:
         logger.warning("Failed to build ready-for-pickup email for %s: %s", tx.id, exc)
 
 
+def send_incoming_preorder_notification(
+    tx: Transaction,
+    event: Event,
+    member_emails: list[str],
+) -> None:
+    if not member_emails:
+        return
+    try:
+        subject = "New pre-order received — Motion-U"
+        html = _render(
+            "incoming_preorder_notification.html",
+            subject,
+            customer_name=tx.customer_name or "Unknown",
+            customer_email=tx.customer_email or "",
+            customer_contact=tx.customer_contact or "",
+            event_name=event.name or "Motion-U",
+            location=(event.location or "").strip(),
+            expected_date=_fmt_date(tx.expected_date),
+            pickup_window=_pickup_window(tx),
+            **_order_context(tx),
+        )
+        for email in member_emails:
+            _send_email(email, subject, html)
+    except Exception as exc:
+        logger.warning("Failed to build incoming pre-order notification for %s: %s", tx.id, exc)
+
+
 def send_fulfillment_thank_you(tx: Transaction, event: Event) -> None:
     if not tx.customer_email:
         return

@@ -13,10 +13,17 @@ export interface EventItem {
   location: string | null
   description: string | null
   status: 'active' | 'ended'
+  preorder_default_date: string | null
+  preorder_default_time_start: string | null
+  preorder_default_time_end: string | null
   created_by_sub: string
   created_by_name: string
   created_at: string
   product_count: number
+}
+
+export interface Settings {
+  member_notification_emails: string[]
 }
 
 export interface Product {

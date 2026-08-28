@@ -50,5 +50,6 @@ async function proxyHandler(request: NextRequest, { params }: { params: Promise<
 
 export const GET = proxyHandler
 export const POST = proxyHandler
+export const PUT = proxyHandler
 export const PATCH = proxyHandler
 export const DELETE = proxyHandler

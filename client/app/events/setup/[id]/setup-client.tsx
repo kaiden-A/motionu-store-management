@@ -10,6 +10,8 @@ import {
   useCreateCombo,
   useUpdateCombo,
   useDeleteCombo,
+  useEvents,
+  useUpdateEvent,
 } from "@/lib/queries";
 import { useToast } from "@/components/toast";
 import { AppShell, EmptyState } from "@/components/shell";
@@ -27,6 +29,9 @@ export function SetupPage({ eventId }: { eventId: string; isAdmin: boolean }) {
 
   const { data: products = [], isLoading } = useProducts(eventId);
   const { data: combos = [] } = useCombos(eventId);
+  const { data: events = [] } = useEvents();
+  const event = events.find((e) => e.id === eventId);
+  const updateEvent = useUpdateEvent();
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
   const deleteProduct = useDeleteProduct();
@@ -35,7 +40,7 @@ export function SetupPage({ eventId }: { eventId: string; isAdmin: boolean }) {
   const deleteCombo = useDeleteCombo();
   const { toast } = useToast();
 
-  const [tab, setTab] = useState<"products" | "combos">("products");
+  const [tab, setTab] = useState<"products" | "combos" | "preorders">("products");
   const [productModal, setProductModal] = useState<{ mode: "create" } | { mode: "edit"; product: Product } | null>(null);
   const [comboModal, setComboModal] = useState<{ mode: "create" } | { mode: "edit"; combo: Combo } | null>(null);
   const [deleteProductTarget, setDeleteProductTarget] = useState<Product | null>(null);
@@ -57,6 +62,12 @@ export function SetupPage({ eventId }: { eventId: string; isAdmin: boolean }) {
           className={`px-4 py-2 rounded-md font-semibold text-sm ${tab === "combos" ? "bg-ink text-white" : "text-ink-soft"}`}
         >
           Combos
+        </button>
+        <button
+          onClick={() => setTab("preorders")}
+          className={`px-4 py-2 rounded-md font-semibold text-sm ${tab === "preorders" ? "bg-ink text-white" : "text-ink-soft"}`}
+        >
+          Pre-orders
         </button>
       </div>
 
@@ -143,7 +154,7 @@ export function SetupPage({ eventId }: { eventId: string; isAdmin: boolean }) {
             </div>
           )}
         </>
-      ) : (
+      ) : tab === "combos" ? (
         <>
           <div className="flex items-center justify-between mb-5">
             <h2 className="font-display text-[22px] font-bold">Combos</h2>
@@ -207,6 +218,26 @@ export function SetupPage({ eventId }: { eventId: string; isAdmin: boolean }) {
             </div>
           )}
         </>
+      ) : (
+        <PreorderDefaultsPanel
+          key={event?.id ?? "none"}
+          defaults={{
+            date: event?.preorder_default_date ?? "",
+            timeStart: event?.preorder_default_time_start ?? "",
+            timeEnd: event?.preorder_default_time_end ?? "",
+          }}
+          onSave={async (values) => {
+            await updateEvent.mutateAsync({
+              id: eventId,
+              body: {
+                preorder_default_date: values.date || null,
+                preorder_default_time_start: values.timeStart || null,
+                preorder_default_time_end: values.timeEnd || null,
+              },
+            });
+            toast("Pre-order defaults saved.");
+          }}
+        />
       )}
 
       {productModal && (
@@ -534,5 +565,72 @@ function ComboModal({
         </div>
       </form>
     </Modal>
+  );
+}
+
+function PreorderDefaultsPanel({
+  defaults,
+  onSave,
+}: {
+  defaults: { date: string; timeStart: string; timeEnd: string };
+  onSave: (values: { date: string; timeStart: string; timeEnd: string }) => void;
+}) {
+  const [date, setDate] = useState(defaults.date);
+  const [timeStart, setTimeStart] = useState(defaults.timeStart);
+  const [timeEnd, setTimeEnd] = useState(defaults.timeEnd);
+  const [busy, setBusy] = useState(false);
+
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setBusy(true);
+    try {
+      await onSave({ date, timeStart, timeEnd });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="max-w-xl">
+      <h2 className="font-display text-[22px] font-bold mb-1">Pre-order defaults</h2>
+      <p className="text-[13px] text-ink-soft mb-5">
+        These are the pickup details customers receive when they pre-order through the Google
+        Form. The order confirmation email is sent with these details automatically.
+      </p>
+      <form id="preorder-defaults-form" onSubmit={handleSubmit} className="bg-card border border-line rounded-[14px] p-5 flex flex-col gap-3.5">
+        <Field label="Default expected ready date">
+          <input type="date" name="default_date" value={date} onChange={(e) => setDate(e.target.value)} className={inputClass} />
+          <span className="text-xs text-ink-soft font-normal">
+            Falls back to the event date if left empty.
+          </span>
+        </Field>
+        <Field label="Default pickup time frame">
+          <div className="flex items-center gap-2">
+            <input type="time" name="default_time_start" value={timeStart} onChange={(e) => setTimeStart(e.target.value)} className={inputClass} />
+            <span className="text-xs text-ink-soft">to</span>
+            <input type="time" name="default_time_end" value={timeEnd} onChange={(e) => setTimeEnd(e.target.value)} className={inputClass} />
+          </div>
+          <span className="text-xs text-ink-soft font-normal">
+            Optional window shown in the confirmation and pickup emails. The pickup location is the
+            event&apos;s location.
+          </span>
+        </Field>
+        <div className="flex justify-end">
+          <button
+            type="submit"
+            form="preorder-defaults-form"
+            disabled={busy}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-violet text-white font-semibold text-sm hover:bg-violet-dark disabled:opacity-60"
+          >
+            {busy ? (
+              <i className="fa-solid fa-circle-notch fa-spin text-[13px]" aria-hidden="true" />
+            ) : (
+              <i className="fa-solid fa-floppy-disk text-[12px]" aria-hidden="true" />
+            )}
+            Save defaults
+          </button>
+        </div>
+      </form>
+    </div>
   );
 }

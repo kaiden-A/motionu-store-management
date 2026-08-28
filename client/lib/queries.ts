@@ -9,6 +9,7 @@ import type {
   OrderType,
   PaymentMethod,
   Product,
+  Settings,
   StatsResponse,
   Transaction,
   UserInfo,
@@ -72,6 +73,29 @@ export function usePreOrders(eventId?: string) {
     queryKey: ['preorders', eventId || 'all'],
     queryFn: () =>
       api.get<Transaction[]>(`/preorders${eventId ? `?event_id=${eventId}` : ''}`),
+  })
+}
+
+export function useSettings() {
+  return useQuery({
+    queryKey: ['settings'],
+    queryFn: () => api.get<Settings>('/settings'),
+  })
+}
+
+export function useUpdateSettings() {
+  const invalidate = useInvalidate()
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (body: Settings) => api.put<Settings>('/settings', body),
+    onMutate: async (body) => {
+      await qc.cancelQueries({ queryKey: ['settings'] })
+      const previous = takeSnapshot(qc, [['settings']])
+      qc.setQueryData<Settings>(['settings'], body)
+      return previous
+    },
+    onError: (_err, _vars, previous) => restoreSnapshot(qc, previous || []),
+    onSettled: () => invalidate(),
   })
 }
 

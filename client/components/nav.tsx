@@ -36,6 +36,12 @@ export const NAV: NavItem[] = [
     admin: true,
     icon: <i className="fa-solid fa-boxes-stacked text-[15px]" aria-hidden="true" />,
   },
+  {
+    href: "/settings",
+    label: "Settings",
+    admin: true,
+    icon: <i className="fa-solid fa-gear text-[15px]" aria-hidden="true" />,
+  },
 ];
 
 export function buildNavItems(isAdmin: boolean, eventId?: string): NavItem[] {

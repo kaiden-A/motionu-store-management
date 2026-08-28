@@ -21,6 +21,9 @@ class Event(Base):
     location: Mapped[str | None] = mapped_column(String(200), nullable=True)
     description: Mapped[str | None] = mapped_column(String(1000), nullable=True)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="active")
+    preorder_default_date: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    preorder_default_time_start: Mapped[str | None] = mapped_column(String(5), nullable=True)
+    preorder_default_time_end: Mapped[str | None] = mapped_column(String(5), nullable=True)
     created_by_sub: Mapped[str] = mapped_column(String(200), nullable=False)
     created_by_name: Mapped[str] = mapped_column(String(200), nullable=False, default="")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
@@ -94,7 +97,6 @@ class ComboItem(Base):
 
 class Transaction(Base):
     __tablename__ = "transactions"
-
     id: Mapped[str] = mapped_column(UUID(as_uuid=False), primary_key=True, default=gen_uuid)
     event_id: Mapped[str] = mapped_column(
         UUID(as_uuid=False), ForeignKey("events.id", ondelete="CASCADE"), nullable=False, index=True
@@ -121,3 +123,10 @@ class Transaction(Base):
     refund_type: Mapped[str | None] = mapped_column(String(30), nullable=True)
 
     event: Mapped[Event] = relationship(back_populates="transactions")
+
+
+class Setting(Base):
+    __tablename__ = "settings"
+
+    key: Mapped[str] = mapped_column(String(100), primary_key=True)
+    value = mapped_column(JSONB, nullable=False, default=dict)

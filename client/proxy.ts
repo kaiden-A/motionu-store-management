@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { getSessionFromRequest, isAdmin } from '@/lib/auth'
 
-const ADMIN_PREFIXES = ['/stats', '/setup', '/preorders']
+const ADMIN_PREFIXES = ['/stats', '/setup', '/preorders', '/settings']
 
 export async function proxy(request: NextRequest) {
   const session = await getSessionFromRequest(request)

@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     email_api: str = ""
     api_key: str = ""
     email_from: str = "info@motionukict.com"
+    form_api_key: str = ""
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 

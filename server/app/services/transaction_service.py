@@ -13,9 +13,11 @@ from app.schemas.transactions import (
 )
 from app.services.email_service import (
     send_fulfillment_thank_you,
+    send_incoming_preorder_notification,
     send_preorder_confirmation,
     send_ready_for_pickup,
 )
+from app.services.settings_service import get_member_emails
 
 
 def product_remaining(product: Product) -> int:
@@ -192,6 +194,7 @@ def checkout(
     db.refresh(tx)
     if is_preorder:
         send_preorder_confirmation(tx, event)
+        send_incoming_preorder_notification(tx, event, get_member_emails(db))
     return tx
 
 
