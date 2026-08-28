@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block body %}
+<p style="margin:0 0 12px;font-size:15px;line-height:1.6;color:#333">Hi {{ first_name }},</p>
+<p style="margin:0 0 12px;font-size:15px;line-height:1.6;color:#333">
+  Thank you so much for shopping with Motion-U! We truly appreciate your support.
+  Here's a recap of your purchase:
+</p>
+{% include "partials/order_table.html" %}
+<p style="margin:0 0 12px;font-size:15px;line-height:1.6;color:#333">
+  We hope you love your new gear and we can't wait to see you at the next event.
+  Keep moving with Motion-U!
+</p>
+{% endblock %}

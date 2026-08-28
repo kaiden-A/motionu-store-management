@@ -82,7 +82,16 @@ export function PreOrdersPage() {
                       {p.items.map((i) => `${i.qty}×${i.name}`).join(", ")}
                     </div>
                     {p.customer_contact && (
-                      <div className="text-[12px] text-ink-soft mt-1">{p.customer_contact}</div>
+                      <div className="text-[12px] text-ink-soft mt-1">
+                        <i className="fa-solid fa-phone mr-1.5" aria-hidden="true" />
+                        {p.customer_contact}
+                      </div>
+                    )}
+                    {p.customer_email && (
+                      <div className="text-[12px] text-ink-soft mt-0.5">
+                        <i className="fa-solid fa-envelope mr-1.5" aria-hidden="true" />
+                        {p.customer_email}
+                      </div>
                     )}
                     {p.customer_notes && (
                       <div className="text-[12px] text-ink-soft mt-0.5 italic">“{p.customer_notes}”</div>
@@ -99,6 +108,11 @@ export function PreOrdersPage() {
                     <div className="text-[12.5px] text-ink-soft mt-1">
                       Expected: {formatDate(p.expected_date)}
                     </div>
+                    {(p.pickup_time_start || p.pickup_time_end) && (
+                      <div className="text-[12.5px] text-ink-soft mt-0.5">
+                        Pickup window: {p.pickup_time_start || "—"} – {p.pickup_time_end || "—"}
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="flex gap-2 mt-3 border-t border-dashed border-line pt-3">

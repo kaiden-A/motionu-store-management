@@ -1,0 +1,28 @@
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:18px 0;border:1px solid #eee;border-radius:10px;overflow:hidden">
+  <tr style="background:#fafafa">
+    <th align="left" style="padding:9px 12px;font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:#888">Item</th>
+    <th align="right" style="padding:9px 12px;font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:#888">Price</th>
+    <th align="right" style="padding:9px 12px;font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:#888">Total</th>
+  </tr>
+  {% for item in items %}
+  <tr>
+    <td style="padding:9px 12px;border-bottom:1px solid #eee;color:#333">{{ item.name }} &times; {{ item.qty }}</td>
+    <td style="padding:9px 12px;border-bottom:1px solid #eee;color:#777;text-align:right">{{ item.unit_price | money }}</td>
+    <td style="padding:9px 12px;border-bottom:1px solid #eee;color:#333;text-align:right">{{ item.line_total | money }}</td>
+  </tr>
+  {% endfor %}
+  <tr>
+    <td style="padding:9px 12px;border-top:1px solid #eee;font-weight:bold;color:#1a1a2e" colspan="2">Total</td>
+    <td style="padding:9px 12px;border-top:1px solid #eee;font-weight:bold;color:#1a1a2e;text-align:right">{{ total | money }}</td>
+  </tr>
+  <tr>
+    <td style="padding:9px 12px;color:#777" colspan="2">Paid</td>
+    <td style="padding:9px 12px;color:#777;text-align:right">{{ amount_paid | money }}</td>
+  </tr>
+  {% if balance > 0 %}
+  <tr>
+    <td style="padding:9px 12px;color:#b45309;font-weight:bold" colspan="2">Balance due</td>
+    <td style="padding:9px 12px;color:#b45309;font-weight:bold;text-align:right">{{ balance | money }}</td>
+  </tr>
+  {% endif %}
+</table>

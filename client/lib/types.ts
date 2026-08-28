@@ -87,8 +87,11 @@ export interface Transaction {
   payment_method: PaymentMethod
   customer_name: string | null
   customer_contact: string | null
+  customer_email: string | null
   customer_notes: string | null
   expected_date: string | null
+  pickup_time_start: string | null
+  pickup_time_end: string | null
   fulfilled_at: string | null
   cancelled_at: string | null
   refund_amount: number | null

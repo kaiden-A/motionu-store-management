@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block body %}
+<p style="margin:0 0 12px;font-size:15px;line-height:1.6;color:#333">Hi {{ first_name }},</p>
+<p style="margin:0 0 12px;font-size:15px;line-height:1.6;color:#333">
+  Thanks for pre-ordering with Motion-U! Your order is now in our system
+  and is being processed. Here's a summary of what you reserved:
+</p>
+{% include "partials/order_table.html" %}
+<p style="margin:0 0 12px;font-size:15px;line-height:1.6;color:#333">
+  <strong>Expected ready:</strong> {{ expected_date }}
+  {% if pickup_window %}&nbsp;&middot;&nbsp;<strong>Pickup:</strong> {{ pickup_window }}{% endif %}
+  &nbsp;&middot;&nbsp;<strong>Event:</strong> {{ event_name }}
+</p>
+<p style="margin:0 0 12px;font-size:15px;line-height:1.6;color:#333">
+  We'll email you the moment your order is ready for pickup.
+  If you have any questions, just reply to this email.
+</p>
+{% endblock %}

@@ -352,8 +352,10 @@ export interface CheckoutPayload {
   payment_method: PaymentMethod
   order_type: OrderType
   amount_paid?: number
-  customer?: { name: string; contact?: string; notes?: string }
+  customer?: { name: string; contact?: string; email?: string; notes?: string }
   expected_date?: string
+  pickup_time_start?: string
+  pickup_time_end?: string
 }
 
 export function useCheckout() {

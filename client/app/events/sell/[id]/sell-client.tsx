@@ -496,8 +496,10 @@ function CheckoutModal({
     payment_method: PaymentMethod;
     order_type: "immediate" | "preorder";
     amount_paid?: number;
-    customer?: { name: string; contact?: string; notes?: string };
+    customer?: { name: string; contact?: string; email?: string; notes?: string };
     expected_date?: string;
+    pickup_time_start?: string;
+    pickup_time_end?: string;
   }) => void;
 }) {
   const [orderType, setOrderType] = useState<"immediate" | "preorder">("immediate");
@@ -521,9 +523,12 @@ function CheckoutModal({
       customer: {
         name,
         contact: String(f.get("customer_contact") || "").trim() || undefined,
+        email: String(f.get("customer_email") || "").trim() || undefined,
         notes: String(f.get("customer_notes") || "").trim() || undefined,
       },
       expected_date: String(f.get("expected_date") || "").trim() || undefined,
+      pickup_time_start: String(f.get("pickup_time_start") || "").trim() || undefined,
+      pickup_time_end: String(f.get("pickup_time_end") || "").trim() || undefined,
     });
   };
 
@@ -595,8 +600,19 @@ function CheckoutModal({
             <Field label="Customer name">
               <input name="customer_name" required placeholder="e.g. Aina" className={inputClass} />
             </Field>
+            <Field label="Customer email" optional>
+              <input
+                type="email"
+                name="customer_email"
+                placeholder="e.g. aina@example.com"
+                className={inputClass}
+              />
+              <span className="text-xs text-ink-soft font-normal">
+                {"We'll"} email order updates here (pre-order received, ready for pickup, thank you).
+              </span>
+            </Field>
             <Field label="Contact" optional>
-              <input name="customer_contact" placeholder="Phone, email, or social handle" className={inputClass} />
+              <input name="customer_contact" placeholder="Phone or social handle" className={inputClass} />
             </Field>
             <Field label="Amount paid" optional>
               <input
@@ -614,6 +630,16 @@ function CheckoutModal({
             </Field>
             <Field label="Expected ready date" optional>
               <input type="date" name="expected_date" className={inputClass} />
+            </Field>
+            <Field label="Pickup time frame" optional>
+              <div className="flex items-center gap-2">
+                <input type="time" name="pickup_time_start" className={inputClass} />
+                <span className="text-xs text-ink-soft">to</span>
+                <input type="time" name="pickup_time_end" className={inputClass} />
+              </div>
+              <span className="text-xs text-ink-soft font-normal">
+                Optional window for when the customer can collect their order.
+              </span>
             </Field>
             <Field label="Notes" optional>
               <textarea name="customer_notes" rows={2} className={inputClass} />

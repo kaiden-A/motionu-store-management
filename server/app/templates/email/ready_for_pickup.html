@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block body %}
+<p style="margin:0 0 12px;font-size:15px;line-height:1.6;color:#333">Hi {{ first_name }},</p>
+<p style="margin:0 0 12px;font-size:15px;line-height:1.6;color:#333">
+  Good news — everything you pre-ordered has arrived and is ready for you!
+  We can't wait to see you.
+</p>
+{% include "partials/order_table.html" %}
+<p style="margin:0 0 12px;font-size:15px;line-height:1.6;color:#333">
+  <strong>Date:</strong> {{ expected_date }}
+  {% if pickup_window %}&nbsp;&middot;&nbsp;<strong>Time:</strong> {{ pickup_window }}{% endif %}
+  &nbsp;&middot;&nbsp;<strong>Where:</strong> {{ event_name }} — {{ location }}
+</p>
+{% if balance > 0 %}
+<p style="margin:0 0 12px;font-size:15px;line-height:1.6;color:#333">
+  A balance of <strong>{{ balance | money }}</strong> remains and will be collected when you pick up.
+  Thank you for your patience!
+</p>
+{% else %}
+<p style="margin:0 0 12px;font-size:15px;line-height:1.6;color:#333">
+  Thank you for your patience — see you at the booth!
+</p>
+{% endif %}
+{% endblock %}

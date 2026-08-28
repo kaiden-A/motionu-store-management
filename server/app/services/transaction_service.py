@@ -11,6 +11,11 @@ from app.schemas.transactions import (
     PreOrderFulfillIn,
     TransactionCreate,
 )
+from app.services.email_service import (
+    send_fulfillment_thank_you,
+    send_preorder_confirmation,
+    send_ready_for_pickup,
+)
 
 
 def product_remaining(product: Product) -> int:
@@ -68,7 +73,7 @@ def checkout(
     user: UserPrincipal,
     payload: TransactionCreate,
 ) -> Transaction:
-    _load_event(db, event_id)
+    event = _load_event(db, event_id)
     is_preorder = payload.order_type == "preorder"
 
     if is_preorder:
@@ -176,12 +181,17 @@ def checkout(
         payment_method=payload.payment_method,
         customer_name=payload.customer.name if payload.customer else None,
         customer_contact=payload.customer.contact if payload.customer else None,
+        customer_email=payload.customer.email if payload.customer else None,
         customer_notes=payload.customer.notes if payload.customer else None,
         expected_date=payload.expected_date,
+        pickup_time_start=payload.pickup_time_start,
+        pickup_time_end=payload.pickup_time_end,
     )
     db.add(tx)
     db.commit()
     db.refresh(tx)
+    if is_preorder:
+        send_preorder_confirmation(tx, event)
     return tx
 
 
@@ -275,6 +285,7 @@ def fulfill_transaction(
     tx.fulfilled_at = datetime.now(timezone.utc)
     db.commit()
     db.refresh(tx)
+    send_fulfillment_thank_you(tx, _load_event(db, tx.event_id))
     return tx
 
 
@@ -285,6 +296,7 @@ def mark_ready(db: Session, tx_id: str, user: UserPrincipal) -> Transaction:
     tx.status = "preorder_ready"
     db.commit()
     db.refresh(tx)
+    send_ready_for_pickup(tx, _load_event(db, tx.event_id))
     return tx
 
 

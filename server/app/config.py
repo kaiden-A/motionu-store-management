@@ -13,6 +13,9 @@ class Settings(BaseSettings):
     zitadel_required_role: Annotated[list[str], NoDecode] = ["member", "entrep", "mainboards", "super_admin"]
     admin_roles: Annotated[list[str], NoDecode] = ["entrep", "mainboards", "super_admin"]
     cors_origins: Annotated[list[str], NoDecode] = []
+    email_api: str = ""
+    api_key: str = ""
+    email_from: str = "info@motionukict.com"
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 

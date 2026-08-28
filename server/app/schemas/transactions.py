@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 PaymentMethod = Literal["Cash", "Transfer", "E-Wallet", "Other"]
 OrderType = Literal["immediate", "preorder"]
@@ -17,7 +17,21 @@ class CartLine(BaseModel):
 class CustomerIn(BaseModel):
     name: str
     contact: str | None = None
+    email: str | None = None
     notes: str | None = None
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        cleaned = value.strip()
+        if not cleaned:
+            return None
+        domain = cleaned.rsplit("@", 1)
+        if len(domain) != 2 or not domain[0] or "." not in domain[1]:
+            raise ValueError("Invalid email address")
+        return cleaned.lower()
 
 
 class TransactionCreate(BaseModel):
@@ -27,6 +41,18 @@ class TransactionCreate(BaseModel):
     amount_paid: float | None = None
     customer: CustomerIn | None = None
     expected_date: str | None = None
+    pickup_time_start: str | None = None
+    pickup_time_end: str | None = None
+
+    @field_validator("pickup_time_start", "pickup_time_end")
+    @classmethod
+    def validate_time(cls, value: str | None) -> str | None:
+        if value is None or not value.strip():
+            return None
+        try:
+            return datetime.strptime(value, "%H:%M").strftime("%H:%M")
+        except ValueError:
+            raise ValueError("Pickup time must be in HH:MM format")
 
 
 class TransactionItemOut(BaseModel):
@@ -54,8 +80,11 @@ class TransactionOut(BaseModel):
     payment_method: PaymentMethod
     customer_name: str | None = None
     customer_contact: str | None = None
+    customer_email: str | None = None
     customer_notes: str | None = None
     expected_date: str | None = None
+    pickup_time_start: str | None = None
+    pickup_time_end: str | None = None
     fulfilled_at: datetime | None = None
     cancelled_at: datetime | None = None
     refund_amount: float | None = None
