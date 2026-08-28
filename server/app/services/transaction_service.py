@@ -34,11 +34,12 @@ def _load_transaction(db: Session, tx_id: str) -> Transaction:
 def _lock_products(db: Session, product_ids: list[str]) -> dict[str, Product]:
     if not product_ids:
         return {}
+    ids = sorted(set(product_ids))
     rows = db.scalars(
-        select(Product).where(Product.id.in_(set(product_ids))).with_for_update()
+        select(Product).where(Product.id.in_(ids)).with_for_update()
     ).all()
     by_id = {p.id: p for p in rows}
-    for pid in set(product_ids):
+    for pid in ids:
         if pid not in by_id:
             raise HTTPException(status_code=404, detail=f"Product {pid} not found")
     return by_id
@@ -47,13 +48,15 @@ def _lock_products(db: Session, product_ids: list[str]) -> dict[str, Product]:
 def _load_combos(db: Session, combo_ids: list[str]) -> dict[str, Combo]:
     if not combo_ids:
         return {}
+    ids = sorted(set(combo_ids))
     rows = db.scalars(
         select(Combo)
         .options(joinedload(Combo.items).joinedload(ComboItem.product))
-        .where(Combo.id.in_(set(combo_ids)))
+        .where(Combo.id.in_(ids))
+        .with_for_update()
     ).unique().all()
     by_id = {c.id: c for c in rows}
-    for cid in set(combo_ids):
+    for cid in ids:
         if cid not in by_id:
             raise HTTPException(status_code=404, detail=f"Combo {cid} not found")
     return by_id

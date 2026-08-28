@@ -284,8 +284,10 @@ export function SellPage({ eventId, isAdmin }: { eventId: string; isAdmin: boole
       {checkoutOpen && (
         <CheckoutModal
           total={cartTotal}
+          busy={checkout.isPending}
           onClose={() => setCheckoutOpen(false)}
           onSubmit={async (payload) => {
+            if (checkout.isPending) return;
             try {
               await checkout.mutateAsync({
                 eventId,
@@ -483,10 +485,12 @@ function RecentActivity({
 
 function CheckoutModal({
   total,
+  busy,
   onClose,
   onSubmit,
 }: {
   total: number;
+  busy?: boolean;
   onClose: () => void;
   onSubmit: (payload: {
     payment_method: PaymentMethod;
@@ -530,9 +534,23 @@ function CheckoutModal({
       footer={
         <>
           <button onClick={onClose} className="px-4 py-2 rounded-lg border border-line font-semibold text-sm">Cancel</button>
-          <button type="submit" form="checkout-form" className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-violet text-white font-semibold text-sm">
-            <i className="fa-solid fa-circle-check text-[13px]" aria-hidden="true" />
-            Confirm &amp; complete sale
+          <button
+            type="submit"
+            form="checkout-form"
+            disabled={busy}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-violet text-white font-semibold text-sm hover:bg-violet-dark disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {busy ? (
+              <>
+                <i className="fa-solid fa-circle-notch fa-spin text-[13px]" aria-hidden="true" />
+                Processing…
+              </>
+            ) : (
+              <>
+                <i className="fa-solid fa-circle-check text-[13px]" aria-hidden="true" />
+                Confirm &amp; complete sale
+              </>
+            )}
           </button>
         </>
       }
