@@ -3,7 +3,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.dependencies import UserPrincipal
-from app.models import Event, Product
+from app.models import Combo, Event, Product
 from app.schemas.public_preorders import FormPreOrderIn
 from app.schemas.transactions import CartLine, CustomerIn, TransactionCreate
 from app.services.transaction_service import checkout
@@ -22,11 +22,26 @@ def create_form_preorder(db: Session, payload: FormPreOrderIn):
     products = db.scalars(
         select(Product).where(Product.event_id == event.id)
     ).all()
+    combos = db.scalars(
+        select(Combo).where(Combo.event_id == event.id)
+    ).all()
     by_name = {p.name.strip().lower(): p for p in products}
+    by_combo_name = {c.name.strip().lower(): c for c in combos}
 
     lines = []
     total = 0.0
     for line in payload.lines:
+        if line.type == "combo":
+            combo = by_combo_name.get(line.name.strip().lower())
+            if not combo:
+                valid = ", ".join(sorted(c.name for c in combos)) or "(no combos yet)"
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Unknown combo '{line.name}'. Valid combos: {valid}",
+                )
+            lines.append(CartLine(ref_type="combo", ref_id=combo.id, qty=line.qty))
+            total += combo.price * line.qty
+            continue
         product = by_name.get(line.name.strip().lower())
         if not product:
             valid = ", ".join(sorted(p.name for p in products)) or "(no products yet)"

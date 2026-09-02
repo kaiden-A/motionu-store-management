@@ -52,7 +52,8 @@ secret.
   },
   "lines": [
     { "name": "Motion-U Tee", "qty": 2 },
-    { "name": "Sticker Pack", "qty": 1 }
+    { "name": "Sticker Pack", "qty": 1 },
+    { "name": "Merch Bundle", "qty": 1, "type": "combo" }
   ],
   "payment_method": "Other"
 }
@@ -67,6 +68,7 @@ secret.
 | `customer.notes` | no | Free text, shown to staff on the Pre-orders page. |
 | `lines[]` | yes (≥1) | Ordered items. `name` must match a product name in that event **exactly** (case-insensitive, leading/trailing spaces ignored). |
 | `lines[].qty` | yes | Quantity, ≥ 1. |
+| `lines[].type` | no | `product` (default) or `combo`. Use `combo` to order a bundle — `name` must then match a combo name in the event exactly. |
 | `payment_method` | no | `Cash`, `Transfer`, `E-Wallet`, or `Other`. Defaults to `Other`. |
 
 ## Response
