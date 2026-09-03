@@ -63,16 +63,25 @@ export function Sidebar() {
       <div className="border-t border-white/15 pt-3">
         {user && (
           <div className="flex items-center gap-2.5 px-1.5 pb-2.5">
-            <span className="w-[28px] h-[28px] rounded-full bg-violet/80 text-white text-[11px] font-bold flex items-center justify-center shrink-0">
-              {user.name
-                ? user.name
-                    .split(" ")
-                    .map((part) => part[0])
-                    .slice(0, 2)
-                    .join("")
-                    .toUpperCase()
-                : "U"}
-            </span>
+            {user.picture ? (
+              // eslint-disable-next-line @next/next/no-img-element -- external Zitadel/Google avatar URL
+              <img
+                src={user.picture}
+                alt={user.name || "User"}
+                className="w-[28px] h-[28px] rounded-full object-cover shrink-0"
+              />
+            ) : (
+              <span className="w-[28px] h-[28px] rounded-full bg-violet/80 text-white text-[11px] font-bold flex items-center justify-center shrink-0">
+                {user.name
+                  ? user.name
+                      .split(" ")
+                      .map((part) => part[0])
+                      .slice(0, 2)
+                      .join("")
+                      .toUpperCase()
+                  : "U"}
+              </span>
+            )}
             <span className="text-xs text-white/60 truncate">{user.name}</span>
           </div>
         )}

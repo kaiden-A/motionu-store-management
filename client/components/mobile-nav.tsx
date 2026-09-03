@@ -28,9 +28,30 @@ export function MobileBottomNav() {
             onClick={() => setAccountOpen(false)}
           />
           <div className="fixed bottom-[calc(3.5rem+env(safe-area-inset-bottom))] right-3 z-40 md:hidden w-52 bg-card border border-line rounded-xl shadow-lg p-1.5">
-            <div className="px-2.5 py-2 text-[13px] font-semibold text-ink truncate">
+            <div className="px-2.5 py-2 flex items-center gap-2">
+            {user?.picture ? (
+              // eslint-disable-next-line @next/next/no-img-element -- external Zitadel/Google avatar URL
+              <img
+                src={user.picture}
+                alt={user.name || "User"}
+                className="w-6 h-6 rounded-full object-cover shrink-0"
+              />
+            ) : (
+              <span className="w-6 h-6 rounded-full bg-violet/80 text-white text-[10px] font-bold flex items-center justify-center shrink-0">
+                {user?.name
+                  ? user.name
+                      .split(" ")
+                      .map((part) => part[0])
+                      .slice(0, 2)
+                      .join("")
+                      .toUpperCase()
+                  : "U"}
+              </span>
+            )}
+            <span className="text-[13px] font-semibold text-ink truncate">
               {user?.name || "Account"}
-            </div>
+            </span>
+          </div>
             {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- full-page logout navigation */}
             <a
               href="/api/auth/logout"

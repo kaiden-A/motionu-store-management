@@ -63,6 +63,7 @@ export async function GET(request: NextRequest) {
       '',
     email: (claims.email as string) || '',
     email_verified: !!claims.email_verified,
+    picture: (claims.picture as string) || null,
     access_token: tokens.access_token,
     expires_at: Math.floor(Date.now() / 1000) + expiresIn,
     roles: extractRoles(claims as Record<string, unknown>),

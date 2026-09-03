@@ -9,6 +9,7 @@ export interface Session {
   name: string
   email: string
   email_verified: boolean
+  picture: string | null
   access_token: string
   expires_at: number
   roles: string[]
@@ -192,6 +193,7 @@ export async function createSessionToken(session: Session) {
     name: session.name,
     email: session.email,
     email_verified: session.email_verified,
+    picture: session.picture,
     access_token: session.access_token,
     roles: session.roles,
   })
@@ -216,6 +218,7 @@ export async function decryptSessionToken(
       name: (payload.name as string) || '',
       email: (payload.email as string) || '',
       email_verified: !!payload.email_verified,
+      picture: (payload.picture as string) || null,
       access_token: (payload.access_token as string) || '',
       expires_at: (payload.exp as number) || 0,
       roles: Array.isArray(payload.roles) ? (payload.roles as string[]) : [],

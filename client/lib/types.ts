@@ -2,6 +2,7 @@ export interface UserInfo {
   email: string
   name: string
   verified: boolean
+  picture: string | null
   roles: string[]
   is_admin: boolean
 }

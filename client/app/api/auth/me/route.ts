@@ -14,6 +14,7 @@ export async function GET() {
       email: session.email,
       name: session.name,
       verified: session.email_verified,
+      picture: session.picture,
       roles: session.roles,
       is_admin: isAdmin(session.roles),
     },
